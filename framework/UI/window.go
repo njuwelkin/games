@@ -5,7 +5,10 @@ import "github.com/hajimehoshi/ebiten/v2"
 type BasicWindow struct {
 	BasicComponent
 	components []GameComponent
-	popUpWin   GameComponent
+
+	popUpWin         GameComponent
+	focusedCom       GameComponent
+	mouseDriftingCom GameComponent
 }
 
 func NewBasicWindow(h, w int, parent ParentComponent) *BasicWindow {
@@ -13,6 +16,8 @@ func NewBasicWindow(h, w int, parent ParentComponent) *BasicWindow {
 		BasicComponent: *NewConponent(0, 0, h, w, parent),
 		components:     []GameComponent{},
 	}
+	ret.focusedCom = &ret
+	ret.mouseDriftingCom = &ret
 	//ret.BasicComponent = *NewConponent(h, w)
 	return &ret
 }
@@ -32,6 +37,9 @@ func (bw *BasicWindow) Update() error {
 func (bw *BasicWindow) drawCompoent(screen *ebiten.Image, com GameComponent) {
 	rect := com.Rect()
 	sw, sh := com.Layout(rect.Width, rect.Height)
+	if sw == 0 || sh == 0 {
+		return
+	}
 	img := ebiten.NewImage(sw, sh)
 	com.Draw(img)
 	op := &ebiten.DrawImageOptions{}
@@ -59,11 +67,35 @@ func (bw *BasicWindow) RemoveSubWin(w Window) {
 	bw.removeSubWinByID(w.ID())
 }
 
-func (bw *BasicWindow) Click(x, y int) {
-	bw.BasicComponent.Click(x, y)
-	for _, com := range bw.components {
+func (bw *BasicWindow) MouseDown(x, y int) {
+	bw.BasicComponent.MouseDown(x, y)
+	bw.focusedCom = bw
+	for i := len(bw.components); i >= 0; i-- {
+		com := bw.components[i]
 		if com.Rect().Cover(x, y) {
-			com.Click(x-com.Rect().Left, y-com.Rect().Top)
+			com.MouseDown(x-com.Rect().Left, y-com.Rect().Top)
+			bw.focusedCom = com
+			break
+		}
+	}
+}
+
+func (bw *BasicWindow) MouseUp(x, y int) {
+	bw.BasicComponent.MouseUp(x, y)
+	com := bw.focusedCom
+	com.MouseDown(x-com.Rect().Left, y-com.Rect().Top)
+}
+
+func (bw *BasicWindow) MouseMove(x, y int) {
+	for i := len(bw.components) - 1; i >= 0; i-- {
+		com := bw.components[i]
+		if com.Rect().Cover(x, y) {
+			if com != bw.mouseDriftingCom && bw.mouseDriftingCom != bw {
+				bw.mouseDriftingCom.MouseLeave()
+			}
+			com.MouseMove(x-com.Rect().Left, y-com.Rect().Top)
+			bw.mouseDriftingCom = com
+			break
 		}
 	}
 }

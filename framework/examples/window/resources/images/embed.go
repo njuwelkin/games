@@ -10,4 +10,7 @@ var (
 
 	//go:embed piece.png
 	Piece_png []byte
+
+	//go:embed fxxz.png
+	Fxxz_png []byte
 )

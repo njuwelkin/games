@@ -13,10 +13,14 @@ type GameComponent interface {
 
 	ID() int
 	Rect() Rect
-
 	Parent() ParentComponent
+	//Click(x, y int)
+	MouseDown(x, y int)
+	MouseUp(x, y int)
+	MouseMove(x, y int)
+	MouseLeave()
 
-	Click(x, y int)
+	//SetOnClick(f func(x, y int))
 }
 
 type ParentComponent interface {
@@ -26,8 +30,12 @@ type ParentComponent interface {
 type Window interface {
 	GameComponent
 
-	//SubWindows() []Window
 	AddComponent(c GameComponent, r Rect)
 	RemoveComponent(c GameComponent)
 	Close()
+}
+
+type IAnimation interface {
+	Update()
+	GetImage() *ebiten.Image
 }
