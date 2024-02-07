@@ -137,7 +137,7 @@ func NewChessModel() *chessModel {
 	ret.player[0] = NewHumanPlayer(&ret.cb)
 	ret.player[1] = NewHumanPlayer(&ret.cb)
 	ret.player[0] = NewAiPlayer(&ret.cb, Black, ret.manual)
-	ret.player[1] = NewAiPlayer(&ret.cb, White, ret.manual)
+	//ret.player[1] = NewAiPlayer(&ret.cb, White, ret.manual)
 	ret.ref = NewRefree(&ret.cb, ret.player)
 	return &ret
 }
