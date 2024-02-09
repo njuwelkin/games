@@ -5,6 +5,7 @@ import (
 	"image/color"
 
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/njuwelkin/games/mkf/mkf"
 )
 
 const (
@@ -14,26 +15,27 @@ const (
 )
 
 type Game struct {
-	imgs []*ebiten.Image
+	imgs  []*ebiten.Image
+	faces []*ebiten.Image
 }
 
 func NewGame() (*Game, error) {
 	ret := Game{}
 
-	mkf := Mkf{}
-	err := mkf.Open("./GOP.MKF")
+	res := mkf.Mkf{}
+	err := res.Open("./GOP.MKF")
 	if err != nil {
 		return nil, err
 	}
 	defer func() {
-		mkf.Close()
+		res.Close()
 	}()
 
-	buf, err := mkf.ReadChunk(1)
+	buf, err := res.ReadChunk(1)
 	if err != nil {
 		return nil, err
 	}
-	tileChunk := BitMapChunk{FrameChunk: FrameChunk{buf}}
+	tileChunk := mkf.BitMapChunk{FrameChunk: mkf.NewFrameChunk(buf)}
 
 	plt, err := getPalette()
 	if err != nil {
@@ -41,7 +43,7 @@ func NewGame() (*Game, error) {
 	}
 
 	for i := 0; i < 60; i++ {
-		bmp, err := tileChunk.GetTileBitMap(INT(i))
+		bmp, err := tileChunk.GetTileBitMap(mkf.INT(i))
 		if err != nil {
 			return nil, err
 		}
@@ -51,6 +53,12 @@ func NewGame() (*Game, error) {
 	//ret.img = bmp.ToImage()
 	getMap()
 	test()
+	imgs, err := getFace(plt)
+	if err != nil {
+		panic("")
+	} else {
+		ret.faces = imgs
+	}
 
 	return &ret, nil
 }
@@ -61,14 +69,28 @@ func (g *Game) Update() error {
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
-	for i, img := range g.imgs {
+	//if g.faces != nil {
+	//	screen.DrawImage(g.bgdImage, nil)
+	//}
+	for i, face := range g.faces {
+		w, h := face.Bounds().Dx(), face.Bounds().Dy()
 		x := i % 10
-		y := i / 6
+		y := i / 5
 		op := ebiten.DrawImageOptions{}
-		op.GeoM.Scale(2, 2)
-		op.GeoM.Translate(float64(70*x), float64(40*y))
-		screen.DrawImage(img, &op)
+		op.GeoM.Translate(float64(w*x), float64(h*y))
+		screen.DrawImage(face, &op)
 	}
+	/*
+		for i, img := range g.imgs {
+			x := i % 10
+			y := i / 6
+			op := ebiten.DrawImageOptions{}
+			op.GeoM.Scale(2, 2)
+			op.GeoM.Translate(float64(70*x), float64(40*y))
+			screen.DrawImage(img, &op)
+		}
+	*/
+
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
@@ -78,60 +100,101 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
 func getPalette() ([]color.Color, error) {
 	palette := []color.Color{}
 
-	mkf := Mkf{}
-	err := mkf.Open("./PAT.MKF")
+	res := mkf.Mkf{}
+	err := res.Open("./PAT.MKF")
 	if err != nil {
 		return palette, err
 	}
 	defer func() {
-		mkf.Close()
+		res.Close()
 	}()
-	fmt.Println(mkf.GetChunkCount())
+	fmt.Println(res.GetChunkCount())
 
-	buf, err := mkf.ReadChunk(1)
+	buf, err := res.ReadChunk(0)
 	if err != nil || len(buf) < 256*3 {
 		return palette, err
 	}
-	pltTrunk := PaletteChunk{buf}
+	pltTrunk := mkf.NewPaletteChunk(buf)
 
-	return pltTrunk.GetPalette(true)
+	return pltTrunk.GetPalette(false)
 }
 
 func getMap() error {
-	mkf := Mkf{}
-	err := mkf.Open("./MAP.MKF")
+	res := mkf.Mkf{}
+	err := res.Open("./MAP.MKF")
 	if err != nil {
 		return err
 	}
 	defer func() {
-		mkf.Close()
+		res.Close()
 	}()
-	fmt.Println(mkf.GetChunkCount())
+	fmt.Println(res.GetChunkCount())
 
-	buf, err := mkf.ReadChunk(1)
+	buf, err := res.ReadChunk(1)
 	if err != nil {
 		return err
 	}
 
-	mc := MapChunk{buf}
+	mc := mkf.NewCompressedChunk(buf)
 	mc.Decompress()
 	return nil
 }
 
-func test() {
-	data := []byte{0xa2, 0xff, 0x56, 0x78}
-	br := NewBitReader(data)
-	lenInBit := len(data) * 8
-	for _, v := range data {
-		fmt.Printf("%b, ", v)
+func getFace(plt []color.Color) ([]*ebiten.Image, error) {
+	res := mkf.Mkf{}
+	err := res.Open("./RGM.MKF")
+	if err != nil {
+		return nil, err
 	}
-	fmt.Println()
+	defer func() {
+		res.Close()
+	}()
+	fmt.Println(res.GetChunkCount())
 
-	for i := 1; i <= 4; i++ {
-		for l := lenInBit; l >= i; l -= i {
-			fmt.Printf("%b ", br.Read(i))
+	ret := []*ebiten.Image{}
+
+	countChunk, _ := res.GetChunkCount()
+	for i := mkf.INT(1); i < countChunk; i++ {
+		buf, err := res.ReadChunk(i)
+		if err != nil {
+			return nil, err
 		}
-		fmt.Println()
-		br.Reset()
+		if len(buf) == 0 {
+			continue
+		}
+		bmp := mkf.NewRLEBitMap(buf)
+		ret = append(ret, bmp.ToImageWithPalette(plt))
 	}
+
+	//mc := mkf.NewCompressedChunk(buf)
+	//mc.Decompress()
+	//unCompressed, err := mc.Decompress()
+	//bmp := mkf.NewBitMap(unCompressed)
+	//return bmp.ToImageWithPalette(plt), err
+	//return bmp.ToImageWithPalette(plt), nil
+	return ret, nil
+}
+
+func test() error {
+	res := mkf.Mkf{}
+	err := res.Open("./SSS.MKF")
+	if err != nil {
+		return err
+	}
+	defer func() {
+		res.Close()
+	}()
+	count, err := res.GetChunkCount()
+	if err != nil {
+		return err
+	}
+	for i := mkf.INT(0); i < count; i++ {
+		//buf, err := res.LoadData(i)
+		buf, err := res.ReadChunk(i)
+		if err != nil {
+			return err
+		}
+		fmt.Sprintln(string(buf))
+	}
+	return nil
 }

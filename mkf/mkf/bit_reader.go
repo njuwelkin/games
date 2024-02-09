@@ -1,4 +1,4 @@
-package main
+package mkf
 
 type BitReader struct {
 	data   []byte

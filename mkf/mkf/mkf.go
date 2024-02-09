@@ -1,15 +1,11 @@
-package main
+package mkf
 
 import (
 	"encoding/binary"
 	"fmt"
-	"image/color"
-	"image/color/palette"
 	"io"
 	"os"
 	"unsafe"
-
-	"github.com/hajimehoshi/ebiten/v2"
 )
 
 type INT uint32
@@ -92,6 +88,21 @@ func (mkf *Mkf) ReadChunk(chunkNum INT) ([]byte, error) {
 	return ret, nil
 }
 
+/*
+func (mkf *Mkf) LoadData(chunkNum INT) ([]byte, error) {
+	buf, err := mkf.ReadChunk(chunkNum)
+	if err != nil {
+		return nil, err
+	}
+	for i := 0; i < len(buf)-1; i += 2 {
+		//tmp := binary.LittleEndian.Uint16(buf[i : i+2])
+		p := (*uint16)(unsafe.Pointer(&buf[i]))
+		*p = binary.LittleEndian.Uint16(buf[i : i+2])
+	}
+	return buf, nil
+}
+*/
+
 func (mkf *Mkf) read(offset INT, buf []byte) error {
 	f := mkf.file
 	size := len(buf)
@@ -124,6 +135,10 @@ type FrameChunk struct {
 	data []byte
 }
 
+func NewFrameChunk(data []byte) FrameChunk {
+	return FrameChunk{data: data}
+}
+
 func (c *FrameChunk) GetCount() INT {
 	return INT(c.data[0]) | INT(c.data[1])<<8
 }
@@ -151,162 +166,6 @@ func (c *FrameChunk) GetFrame(frameNum INT) ([]byte, error) {
 		return nil, fmt.Errorf("")
 	}
 	return data[offset:nextOffset], nil
-}
-
-/*
-type tileBitMapChunkData struct {
-	count	uint16
-	offset	[count] uint16
-	data	[count] rleBitMap
-}
-*/
-
-type BitMapChunk struct {
-	FrameChunk
-}
-
-// PAL_SpriteGetFrame
-func (bc *BitMapChunk) GetTileBitMap(frameNum INT) (*BitMap, error) {
-	frame, err := bc.GetFrame(frameNum)
-	if err != nil {
-		return nil, err
-	}
-	return &BitMap{frame}, nil
-}
-
-/*
-type RLEBitMapData struct {
-	width	uint16
-	height	uint16
-	data ...
-}
-*/
-
-type BitMap struct {
-	data []byte
-}
-
-func (bmp *BitMap) GetWidth() INT {
-	offset := 0
-	data := bmp.data
-	if data[0] == 0x02 && data[1] == 0x00 &&
-		data[2] == 0x00 && data[3] == 0x00 {
-		offset += 4
-	}
-	return INT(data[offset]) | INT(data[offset+1])<<8
-}
-
-func (bmp *BitMap) GetHeight() INT {
-	offset := 0
-	data := bmp.data
-	if data[0] == 0x02 && data[1] == 0x00 &&
-		data[2] == 0x00 && data[3] == 0x00 {
-		offset += 4
-	}
-	return INT(data[offset+2]) | INT(data[offset+3])<<8
-}
-
-func (bmp *BitMap) GetNINT(n INT) INT {
-	offset := 0
-	data := bmp.data
-	if data[0] == 0x02 && data[1] == 0x00 &&
-		data[2] == 0x00 && data[3] == 0x00 {
-		offset += 4
-	}
-	return INT(data[offset+int(2*n)]) | INT(data[offset+int(2*n)+1])<<8
-}
-
-func (bmp *BitMap) PrintRaw() {
-	for i := 5; i < len(bmp.data); i++ {
-		fmt.Printf("%x ", bmp.data[i])
-	}
-	fmt.Println()
-}
-
-func (bmp *BitMap) Decode() []byte {
-	//w := bmp.GetWidth()
-	//h := bmp.GetHeight()
-	//l := w * h
-	//var uiSrcX INT = 0
-
-	data := bmp.data[5:]
-	tIdx := 0
-	var countPix INT = 0
-	var countEmpty INT = 0
-	for tIdx < len(data) && data[tIdx] != 0 {
-		T := INT(data[tIdx])
-
-		if T&0x80 != 0 { //&& T <= 0x80+w {
-			countEmpty += T - 0x80
-			tIdx++
-		} else {
-			countPix += T
-			tIdx += int(T)
-			tIdx++
-		}
-	}
-	//fmt.Println(countPix, countEmpty)
-	return nil
-}
-
-func (bmp *BitMap) ToImage() *ebiten.Image {
-	return bmp.toImage(palette.Plan9)
-}
-
-func (bmp *BitMap) toImage(plt []color.Color) *ebiten.Image {
-	w := int(bmp.GetWidth())
-	h := int(bmp.GetHeight())
-	//l := w * h
-	img := ebiten.NewImage(int(w), int(h))
-
-	//var uiSrcX INT = 0
-
-	data := bmp.data[5:]
-	tIdx := 0
-	x, y := 0, 0
-	for tIdx < len(data) && data[tIdx] != 0 {
-		T := INT(data[tIdx])
-
-		if T&0x80 != 0 { //&& T <= 0x80+w {
-			x += int(T - 0x80)
-			y += x / w
-			x %= w
-
-			tIdx++
-		} else {
-			tIdx++
-			if tIdx >= len(data) {
-				break
-			}
-			for j := 0; j < int(T); j++ {
-				img.Set(x, y, PixToRGBA(data[tIdx], plt))
-				x, y = bmp.next(x, y)
-				tIdx++
-			}
-			//countPix += T
-			//tIdx += int(T)
-		}
-	}
-
-	return img
-}
-
-func (bmp *BitMap) ToImageWithPalette(plt []color.Color) *ebiten.Image {
-	return bmp.toImage(plt)
-}
-
-func (bmp *BitMap) next(x, y int) (int, int) {
-	x++
-	if x == int(bmp.GetWidth()) {
-		y++
-		x = 0
-	}
-	return x, y
-}
-
-func PixToRGBA(pix byte, plt []color.Color) color.Color {
-	//return palette.Plan9[pix]
-	return plt[pix]
 }
 
 /*
@@ -358,19 +217,23 @@ type _MapChunk struct {
 
 */
 
-type MapChunk struct {
+type CompressedChunk struct {
 	data []byte
 }
 
-func (mc *MapChunk) Decompress() (*Map, error) {
-	hdr := getYJ1_FILEHEADER(mc.data)
+func NewCompressedChunk(data []byte) CompressedChunk {
+	return CompressedChunk{data: data}
+}
+
+func (cc *CompressedChunk) Decompress() ([]byte, error) {
+	hdr := getYJ1_FILEHEADER(cc.data)
 	if hdr.Signature != 0x315f4a59 { // "YJ1_"
 		return nil, fmt.Errorf("")
 	}
-	tree_len := hdr.HuffmanTreeLength * 2
-	flag := mc.data[16+tree_len:]
+	tree_len := int(hdr.HuffmanTreeLength) * 2
+	flag := cc.data[16+tree_len:]
 
-	root := makeHFMTree(mc.data[16:16+tree_len], flag, int(tree_len))
+	root := makeHFMTree(cc.data[16:16+tree_len], flag, int(tree_len))
 
 	var offset int
 	if tree_len&0xf == 0 {
@@ -381,15 +244,15 @@ func (mc *MapChunk) Decompress() (*Map, error) {
 	dst := make([]byte, hdr.UncompressedLength)
 	dstPtr := 0
 	for i := 0; i < int(hdr.BlockCount); i++ {
-		header := get_YJ_1_BLOCKHEADER(mc.data[offset:])
+		header := get_YJ_1_BLOCKHEADER(cc.data[offset:])
 		if header.CompressedLength == 0 {
 			// block is not compressed, copy it directly
 			offset += 4
-			copy(dst[dstPtr:], mc.data[offset:offset+int(header.UncompressedLength)])
+			copy(dst[dstPtr:], cc.data[offset:offset+int(header.UncompressedLength)])
 			offset += int(header.UncompressedLength)
 		} else {
 			offset += 24
-			br := NewBitReader(mc.data[offset:])
+			br := NewBitReader(cc.data[offset:])
 
 			// read a new block
 			loop := yj1_get_loop(&br, header)
@@ -424,10 +287,10 @@ func (mc *MapChunk) Decompress() (*Map, error) {
 				}
 			}
 
-			offset += int(header.CompressedLength)
+			offset += int(header.CompressedLength) - 24
 		}
 	}
-	return &Map{dst}, nil
+	return dst, nil
 }
 
 func yj1_get_count(br *BitReader, header _YJ_1_BLOCKHEADER) uint16 {
@@ -503,33 +366,6 @@ type Map struct {
 	data []byte
 }
 
-type PaletteChunk struct {
-	data []byte
-}
-
-func (pc *PaletteChunk) GetPalette(night bool) ([]color.Color, error) {
-	if len(pc.data) < 256*3 {
-		return nil, fmt.Errorf("")
-	} else if len(pc.data) < 256*3*2 {
-		night = false
-	}
-	buf := pc.data
-	ret := []color.Color{}
-	offset := 0
-	if night {
-		offset = 3 * 256
-	}
-	for i := 0; i < 256; i++ {
-		// if night, + 256 * 3
-		r := buf[offset+i*3] << 2
-		g := buf[offset+i*3+1] << 2
-		b := buf[offset+i*3+2] << 2
-		a := uint8(color.Opaque.A)
-		ret = append(ret, color.RGBA{r, g, b, a})
-	}
-	return ret, nil
-}
-
 type _YJ1_FILEHEADER struct {
 	Signature          INT
 	UncompressedLength INT
@@ -547,4 +383,22 @@ type _YJ_1_BLOCKHEADER struct {
 	LZSSRepeatCodeLengthTable [3]uint8
 	CodeCountCodeLengthTable  [3]uint8
 	CodeCountTable            [2]uint8
+}
+
+type PlaneChunk struct {
+	data []byte
+}
+
+func NewPlaneChunk(data []byte) PlaneChunk {
+	for i := 0; i < len(data)-1; i += 2 {
+		//tmp := binary.LittleEndian.Uint16(buf[i : i+2])
+		p := (*uint16)(unsafe.Pointer(&data[i]))
+		*p = binary.LittleEndian.Uint16(data[i : i+2])
+	}
+	return PlaneChunk{data: data}
+}
+
+func (pc *PlaneChunk) Get(idx int, eleSize uintptr) unsafe.Pointer {
+	i := idx * int(eleSize)
+	return unsafe.Pointer(&pc.data[i])
 }
