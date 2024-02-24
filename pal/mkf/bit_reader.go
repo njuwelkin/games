@@ -17,7 +17,7 @@ func (br *BitReader) Read(count int) uint16 {
 		count = count + bptr - 16
 		mask := uint16(0xffff) >> bptr
 		return (((uint16(br.data[tmp]) | (uint16(br.data[tmp+1]) << 8)) & mask) << count) |
-			((uint16(br.data[tmp+2]) | (uint16(br.data[tmp]+3) << 8)) >> (16 - count))
+			((uint16(br.data[tmp+2]) | (uint16(br.data[tmp+3]) << 8)) >> (16 - count))
 	} else {
 		/*
 			a := uint16(br.data[tmp])

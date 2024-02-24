@@ -8,7 +8,13 @@ import (
 	"unsafe"
 )
 
-type INT uint32
+type (
+	INT    uint32
+	WORD   = uint16
+	SHORT  = int16
+	USHORT = uint16
+	DWORD  = uint32
+)
 
 /*
 	type mfkData struct {
@@ -153,7 +159,7 @@ func (c *FrameChunk) GetFrame(frameNum INT) ([]byte, error) {
 	count := c.GetCount()
 	fmt.Printf("%d images in total\n", count)
 	if frameNum >= count {
-		return nil, fmt.Errorf("")
+		return nil, fmt.Errorf("In GetFrame(), invailid frame number: %d", frameNum)
 	}
 	data := c.data
 	offset := c.getOffset(frameNum)
@@ -234,6 +240,7 @@ func (cc *CompressedChunk) Decompress() ([]byte, error) {
 	flag := cc.data[16+tree_len:]
 
 	root := makeHFMTree(cc.data[16:16+tree_len], flag, int(tree_len))
+	root.Print()
 
 	var offset int
 	if tree_len&0xf == 0 {
@@ -247,46 +254,51 @@ func (cc *CompressedChunk) Decompress() ([]byte, error) {
 		header := get_YJ_1_BLOCKHEADER(cc.data[offset:])
 		if header.CompressedLength == 0 {
 			// block is not compressed, copy it directly
-			offset += 4
+			offset += 4 // block header len
 			copy(dst[dstPtr:], cc.data[offset:offset+int(header.UncompressedLength)])
 			offset += int(header.UncompressedLength)
 		} else {
-			offset += 24
+			offset += 24 // block header len
 			br := NewBitReader(cc.data[offset:])
 
-			// read a new block
-			loop := yj1_get_loop(&br, header)
-			if loop == 0 {
-				break
-			}
-			for ; loop > 0; loop-- {
-				node := root
-				for !node.leaf {
-					if br.Read(1) == 0 {
-						node = node.left
-					} else {
-						node = node.right
-					}
+			for j := 0; ; j++ {
+				//fmt.Println(i, j)
+				if i == 1 && (j == 60) {
+					fmt.Println()
 				}
-				dst[dstPtr] = node.value
-				dstPtr++
-			}
-
-			// read a repeated block
-			loop = yj1_get_loop(&br, header)
-			if loop == 0 {
-				break
-			}
-			for ; loop != 0; loop-- {
-				count := yj1_get_count(&br, header)
-				pos := br.Read(2)
-				pos = br.Read(int(header.LZSSOffsetCodeLengthTable[pos]))
-				for ; count != 0; count-- {
-					dst[dstPtr] = dst[dstPtr-int(pos)]
+				// read a new block
+				loop := yj1_get_loop(&br, header)
+				if loop == 0 {
+					break
+				}
+				for ; loop > 0; loop-- {
+					node := root
+					for !node.leaf {
+						if br.Read(1) == 0 {
+							node = node.left
+						} else {
+							node = node.right
+						}
+					}
+					dst[dstPtr] = node.value
 					dstPtr++
 				}
-			}
 
+				// read a repeated block
+				loop = yj1_get_loop(&br, header)
+				if loop == 0 {
+					break
+				}
+				for ; loop != 0; loop-- {
+					count := yj1_get_count(&br, header)
+					pos := br.Read(2)
+					pos = br.Read(int(header.LZSSOffsetCodeLengthTable[pos]))
+					for ; count != 0; count-- {
+						dst[dstPtr] = dst[dstPtr-int(pos)]
+						dstPtr++
+					}
+				}
+			}
 			offset += int(header.CompressedLength) - 24
 		}
 	}
@@ -295,15 +307,20 @@ func (cc *CompressedChunk) Decompress() ([]byte, error) {
 
 func yj1_get_count(br *BitReader, header _YJ_1_BLOCKHEADER) uint16 {
 	tmp := br.Read(2)
+	var ret uint16
 	if tmp == 0 {
-		return header.LZSSRepeatTable[0]
+		ret = header.LZSSRepeatTable[0]
 	} else {
 		if br.Read(1) == 0 {
-			return header.LZSSRepeatTable[int(tmp)]
+			ret = header.LZSSRepeatTable[int(tmp)]
 		} else {
-			return br.Read(int(header.LZSSRepeatCodeLengthTable[tmp-1]))
+			ret = br.Read(int(header.LZSSRepeatCodeLengthTable[tmp-1]))
 		}
 	}
+	//if ret > 100 {
+	//	ret += 5000
+	//}
+	return ret
 }
 
 func yj1_get_loop(br *BitReader, header _YJ_1_BLOCKHEADER) uint16 {

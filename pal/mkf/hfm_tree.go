@@ -22,9 +22,9 @@ func makeHFMTree(src []byte, flags []byte, tree_len int) *YJ1TreeNode {
 	tree[1].parent = root
 	root.right = &tree[2]
 	tree[2].parent = root
-	for i := 1; i < tree_len; i++ {
+	for i := 1; i <= tree_len; i++ {
 		if tree[i].parent == nil {
-			break
+			panic("")
 		}
 		tree[i].leaf = br.Read(1) == 0
 		tree[i].value = src[i-1]
@@ -41,4 +41,26 @@ func makeHFMTree(src []byte, flags []byte, tree_len int) *YJ1TreeNode {
 		}
 	}
 	return root
+}
+
+func (node *YJ1TreeNode) Print() {
+	buf := []byte{}
+	var dfs func(*YJ1TreeNode)
+	dfs = func(node *YJ1TreeNode) {
+		if node.leaf {
+			fmt.Printf("%d: %s\n", node.value, string(buf))
+			return
+		}
+		if node.left != nil {
+			buf = append(buf, '0')
+			dfs(node.left)
+			buf = buf[:len(buf)-1]
+		}
+		if node.right != nil {
+			buf = append(buf, '1')
+			dfs(node.right)
+			buf = buf[:len(buf)-1]
+		}
+	}
+	dfs(node)
 }
