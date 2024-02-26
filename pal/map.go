@@ -41,6 +41,10 @@ import (
 //  d & 0x2000
 //
 
+type Pos struct {
+	X, Y int
+}
+
 type Rect struct {
 	X, Y int
 	W, H int
@@ -162,7 +166,7 @@ func (m Map) GetTileHeight(x, y, h, ucLayer byte) byte {
 	return byte(d & 0xf)
 }
 
-func (m Map) BlitToSurface(rect Rect, ucLayer byte, surface *ebiten.Image, plt []color.Color) {
+func (m Map) BlitToSurface(rect Rect, ucLayer byte, surface *ebiten.Image, plt []color.RGBA) {
 	sy := rect.Y/16 - 1
 	dy := (rect.Y+rect.H)/16 + 2
 	sx := rect.X/32 - 1

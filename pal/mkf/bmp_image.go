@@ -2,7 +2,6 @@ package mkf
 
 import (
 	"image/color"
-	"image/color/palette"
 
 	"github.com/hajimehoshi/ebiten/v2"
 )
@@ -91,11 +90,17 @@ func (bmp *BitMap) GetHeight() INT {
 	return bmp.h
 }
 
-func (bmp *BitMap) ToImage() *ebiten.Image {
-	return bmp.ToImageWithPalette(palette.Plan9)
+// for hack
+func (bmp *BitMap) SetHeight(h INT) {
+	bmp.h = h
 }
 
-func (bmp *BitMap) toImage(plt []color.Color) *ebiten.Image {
+func (bmp *BitMap) ToImage() *ebiten.Image {
+	//return bmp.ToImageWithPalette(palette.Plan9)
+	return nil
+}
+
+func (bmp *BitMap) toImage(plt []color.RGBA) *ebiten.Image {
 	img := ebiten.NewImage(int(bmp.w), int(bmp.h))
 	x, y := 0, 0
 	for tIdx := 0; tIdx < len(bmp.data); tIdx++ {
@@ -105,7 +110,7 @@ func (bmp *BitMap) toImage(plt []color.Color) *ebiten.Image {
 	return img
 }
 
-func (bmp *BitMap) rleToImage(plt []color.Color, shadow bool) *ebiten.Image {
+func (bmp *BitMap) rleToImage(plt []color.RGBA, shadow bool) *ebiten.Image {
 	w := int(bmp.GetWidth())
 	h := int(bmp.GetHeight())
 	//l := w * h
@@ -147,7 +152,7 @@ func (bmp *BitMap) rleToImage(plt []color.Color, shadow bool) *ebiten.Image {
 	return img
 }
 
-func (bmp *BitMap) ToImageWithPalette(plt []color.Color) *ebiten.Image {
+func (bmp *BitMap) ToImageWithPalette(plt []color.RGBA) *ebiten.Image {
 	if bmp.rle {
 		return bmp.rleToImage(plt, false)
 	} else {
@@ -168,7 +173,7 @@ func (bmp *BitMap) next(x, y int) (int, int) {
 	return x, y
 }
 
-func pixToRGBA(pix byte, plt []color.Color) color.Color {
+func pixToRGBA(pix byte, plt []color.RGBA) color.Color {
 	//return palette.Plan9[pix]
 	return plt[pix]
 }

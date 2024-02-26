@@ -94,6 +94,36 @@ func (mkf *Mkf) ReadChunk(chunkNum INT) ([]byte, error) {
 	return ret, nil
 }
 
+func (mkf *Mkf) getCompressedChunk(chunkNum INT) (CompressedChunk, error) {
+	buf, err := mkf.ReadChunk(chunkNum)
+	if err != nil {
+		return CompressedChunk{}, err
+	}
+	return NewCompressedChunk(buf), nil
+}
+
+func (mkf *Mkf) GetBitMapChunk(chunkNum INT) (BitMapChunk, error) {
+	buf, err := mkf.ReadChunk(chunkNum)
+	if err != nil {
+		return BitMapChunk{}, err
+	}
+	return NewBitMapChunk(buf), nil
+}
+
+/*
+func (mkf *Mkf) getMgoChunk(chunkNum INT) (MgoChunk, error) {
+	chunk, err := mkf.getCompressedChunk(chunkNum)
+	if err != nil {
+		return MgoChunk{}, err
+	}
+	buf, err := chunk.Decompress()
+	if err != nil {
+		return MgoChunk{}, err
+	}
+	return MgoChunk{NewBitMapChunk(buf)}, nil
+}
+*/
+
 /*
 func (mkf *Mkf) LoadData(chunkNum INT) ([]byte, error) {
 	buf, err := mkf.ReadChunk(chunkNum)
@@ -138,11 +168,16 @@ func (mkf *Mkf) readINT(offset INT) (INT, error) {
 }
 
 type FrameChunk struct {
-	data []byte
+	data      []byte
+	frameSize int
 }
 
 func NewFrameChunk(data []byte) FrameChunk {
-	return FrameChunk{data: data}
+	return FrameChunk{data: data, frameSize: 320 * 200}
+}
+
+func (c *FrameChunk) SetFrameSize(frameSize int) {
+	c.frameSize = frameSize
 }
 
 func (c *FrameChunk) GetCount() INT {
@@ -169,7 +204,7 @@ func (c *FrameChunk) GetFrame(frameNum INT) ([]byte, error) {
 	//	offset = WORD(offset)
 	//}
 	if nextOffset == 0 {
-		return nil, fmt.Errorf("")
+		return data[offset:], nil
 	}
 	return data[offset:nextOffset], nil
 }

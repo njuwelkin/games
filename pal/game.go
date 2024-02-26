@@ -21,7 +21,7 @@ type Game struct {
 	faces []*ebiten.Image
 
 	m     Map
-	plt   []color.Color
+	plt   []color.RGBA
 	count int
 }
 
@@ -43,7 +43,8 @@ func NewGame() (*Game, error) {
 	}
 	tileChunk := mkf.BitMapChunk{FrameChunk: mkf.NewFrameChunk(buf)}
 
-	plt, err := getPalette()
+	//plt, err := getPalette()
+	plt, err := mkf.GetPalette(0, false)
 	if err != nil {
 		return nil, err
 	}
@@ -128,8 +129,8 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
 	return ScreenWidth, ScreenHeight
 }
 
-func getPalette() ([]color.Color, error) {
-	palette := []color.Color{}
+func getPalette() ([]color.RGBA, error) {
+	palette := []color.RGBA{}
 
 	res := mkf.Mkf{}
 	err := res.Open("./PAT.MKF")
@@ -150,7 +151,7 @@ func getPalette() ([]color.Color, error) {
 	return pltTrunk.GetPalette(false)
 }
 
-func getMap(plt []color.Color) (*ebiten.Image, error) {
+func getMap(plt []color.RGBA) (*ebiten.Image, error) {
 	m, err := LoadMap(12)
 	if err != nil {
 		return nil, err
@@ -169,7 +170,7 @@ func min(x, y int) int {
 	return y
 }
 
-func getFace(plt []color.Color) ([]*ebiten.Image, error) {
+func getFace(plt []color.RGBA) ([]*ebiten.Image, error) {
 	res := mkf.Mkf{}
 	err := res.Open("./RGM.MKF")
 	if err != nil {
@@ -204,7 +205,7 @@ func getFace(plt []color.Color) ([]*ebiten.Image, error) {
 	return ret, nil
 }
 
-func test(plt []color.Color) (*ebiten.Image, error) {
+func test(plt []color.RGBA) (*ebiten.Image, error) {
 	res := mkf.FbpMkf{}
 	err := res.Open("./FBP.MKF")
 	if err != nil {
@@ -213,7 +214,7 @@ func test(plt []color.Color) (*ebiten.Image, error) {
 	defer func() {
 		res.Close()
 	}()
-	bmp, err := res.GetManMenuBgdBmp()
+	bmp, err := res.GetMainMenuBgdBmp()
 	if err != nil {
 		return nil, err
 	}
