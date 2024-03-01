@@ -2,6 +2,23 @@ package mkf
 
 import "unsafe"
 
+type SSSMkf struct {
+	Mkf
+}
+
+func NewSSSMkf(file string) (SSSMkf, error) {
+	ret := SSSMkf{Mkf{}}
+	return ret, ret.Open(file)
+}
+
+func (sm *SSSMkf) GetMsgOffsetChunk() (*MsgOffsetChunk, error) {
+	buf, err := sm.ReadChunk(3)
+	if err != nil {
+		return nil, err
+	}
+	return &MsgOffsetChunk{NewPlaneChunk(buf)}, nil
+}
+
 type EventObject struct {
 	VanishTime               SHORT  // vanish time (?)
 	X                        WORD   // X coordinate on the map
@@ -28,6 +45,10 @@ type ScriptEntry struct {
 
 // chunk 0 in sss.mkf
 type EventObjectChunk struct {
+	PlaneChunk
+}
+
+type MsgOffsetChunk struct {
 	PlaneChunk
 }
 

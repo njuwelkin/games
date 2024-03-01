@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/njuwelkin/games/pal/mkf"
 	"github.com/njuwelkin/games/pal/ui"
@@ -10,13 +12,12 @@ type openingMenu struct {
 	ui.BasicWindow
 	backGround *mkf.BitMap
 	//plt        []color.RGBA
-
-	count int
+	menu *ui.Menu
 }
 
-func newOpeningMenu() *openingMenu {
+func newOpeningMenu(parent ui.ParentCom) *openingMenu {
 	ret := openingMenu{
-		BasicWindow: *ui.NewBasicWindow(nil),
+		BasicWindow: *ui.NewBasicWindow(parent),
 	}
 
 	plt, err := mkf.GetPalette(0, false)
@@ -44,17 +45,35 @@ func newOpeningMenu() *openingMenu {
 	ret.OnOpen = func() {
 		ret.FadeIn(60)
 	}
+
+	ret.Timer().AddOneTimeEvent(60, func(int) {
+		ret.menu = ui.NewMenu(0, 0, 200, 320, &ret, globalSetting.Font.NormalFont, false)
+		ret.menu.AddItem(globalSetting.Text.WordBuf[7], ui.Pos{X: 130, Y: 85})
+		ret.menu.AddItem(globalSetting.Text.WordBuf[8], ui.Pos{X: 130, Y: 110})
+		ret.menu.OnSelect = func(idx int) {
+			if idx == 0 {
+				// new game
+				fmt.Println("new game")
+			} else {
+				// pop load game menu
+				fmt.Println("load game")
+			}
+		}
+		ret.AddComponent(ret.menu)
+	})
 	return &ret
 }
 
 func (om *openingMenu) Update() error {
 	om.BasicWindow.Update()
-	om.count++
+	//ui.DefaultInput.Update()
 	return nil
 }
 
 func (om *openingMenu) Draw(screen *ebiten.Image) {
 	screen.DrawImage(om.backGround.ToImageWithPalette(om.GetPalette()), nil)
+	om.BasicWindow.Draw(screen)
+	//ui.NewLabel(globalSetting.Text.WordBuf[8], globalSetting.Font.NormalFont).Draw(screen, true)
 }
 
 func (om *openingMenu) Layout(outsideWidth, outsideHeight int) (int, int) {

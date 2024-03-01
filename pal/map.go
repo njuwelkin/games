@@ -41,15 +41,6 @@ import (
 //  d & 0x2000
 //
 
-type Pos struct {
-	X, Y int
-}
-
-type Rect struct {
-	X, Y int
-	W, H int
-}
-
 type Map struct {
 	Tiles [128][64][2]mkf.DWORD
 	//TileSprite []byte

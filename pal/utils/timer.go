@@ -49,17 +49,19 @@ func NewTimer() *TimerManager {
 	}
 }
 
-func (t *TimerManager) AddOneTimeEvent(countDown int, fn func(int)) {
+func (t *TimerManager) AddOneTimeEvent(countDown int, fn func(int)) uint64 {
+	t.idCounter++
 	heap.Push(&t.queue, timerNode{
 		deadline: t.count + countDown,
 		repeat:   1,
 		callback: fn,
 		id:       t.idCounter,
 	})
-	t.idCounter++
+	return t.idCounter
 }
 
-func (t *TimerManager) AddRepeatEvent(freq int, repeat int, fn func(int)) {
+func (t *TimerManager) AddRepeatEvent(freq int, repeat int, fn func(int)) uint64 {
+	t.idCounter++
 	heap.Push(&t.queue, timerNode{
 		deadline: t.count + freq,
 		freq:     freq,
@@ -67,10 +69,11 @@ func (t *TimerManager) AddRepeatEvent(freq int, repeat int, fn func(int)) {
 		callback: fn,
 		id:       t.idCounter,
 	})
-	t.idCounter++
+	return t.idCounter
 }
 
-func (t *TimerManager) RepeatUntil(freq int, fn func(int), until func() bool) {
+func (t *TimerManager) RepeatUntil(freq int, fn func(int), until func() bool) uint64 {
+	t.idCounter++
 	heap.Push(&t.queue, timerNode{
 		deadline: t.count + freq,
 		freq:     freq,
@@ -78,7 +81,7 @@ func (t *TimerManager) RepeatUntil(freq int, fn func(int), until func() bool) {
 		callback: fn,
 		id:       t.idCounter,
 	})
-	t.idCounter++
+	return t.idCounter
 }
 
 func (t *TimerManager) RemoveEvent(id uint64) {

@@ -2,16 +2,17 @@ package main
 
 import (
 	"image"
-	"image/color"
 	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/njuwelkin/games/pal/mkf"
+	ui "github.com/njuwelkin/games/pal/ui"
 )
 
 const fadeTime = 10000
 
 type splashScreen struct {
+	*ui.BasicWindow
 	bmpSplashUp    *mkf.BitMap
 	bmpSplashDown  *mkf.BitMap
 	bmpSplashTitle *mkf.BitMap
@@ -24,20 +25,24 @@ type splashScreen struct {
 	titleHeight int
 
 	beginTime time.Time
-	palette   []color.RGBA
 	bgdPos    int
+
+	input *ui.Input
+	state int
 
 	count int
 }
 
-func newSplashScreen() *splashScreen {
+func newSplashScreen(parent ui.ParentCom) *splashScreen {
 	ret := splashScreen{}
+
+	ret.BasicWindow = ui.NewBasicWindow(parent)
 
 	palette, err := mkf.GetPalette(1, false)
 	if err != nil {
 		panic("")
 	}
-	ret.palette = palette
+	ret.SetPalette(palette)
 
 	fbp := mkf.FbpMkf{}
 	err = fbp.Open("./FBP.MKF")
@@ -85,32 +90,33 @@ func newSplashScreen() *splashScreen {
 	ret.bgdPos = 200
 	ret.beginTime = time.Now()
 	ret.cranePos = Pos{X: 300, Y: 100}
+	ret.OnOpen = func() {
+		ret.FadeIn(300)
+	}
 	return &ret
 }
 
 func (ss *splashScreen) Update() error {
 	ss.count++
+	ss.BasicWindow.Update()
+	if ss.state == 0 {
+		if ss.input.Pressed(ui.KeySpace) || ss.input.Pressed(ui.KeyEcs) {
+			ss.setState(1)
+		}
+	} else if ss.state == 1 {
+		ss.state = 2
+		ss.FadeOut(60)
+		ss.Timer().AddOneTimeEvent(60, func(int) {
+			ss.Close(nil)
+		})
+	}
 	return nil
 }
 
 func (ss *splashScreen) Draw(screen *ebiten.Image) {
 	var imgSplashUp, imgSplashDown *ebiten.Image
 
-	crtPal := []color.RGBA{}
-	crtTime := time.Now()
-	due := crtTime.Sub(ss.beginTime).Milliseconds()
-	if due < fadeTime {
-		for i := 0; i < 256; i++ {
-			crtPal = append(crtPal, color.RGBA{
-				R: uint8(float64(ss.palette[i].R) * (float64(due) / fadeTime)),
-				G: uint8(float64(ss.palette[i].G) * (float64(due) / fadeTime)),
-				B: uint8(float64(ss.palette[i].B) * (float64(due) / fadeTime)),
-				A: uint8(ss.palette[i].A),
-			})
-		}
-	} else {
-		crtPal = ss.palette
-	}
+	crtPal := ss.GetPalette()
 	imgSplashUp = ss.bmpSplashUp.ToImageWithPalette(crtPal)
 	imgSplashDown = ss.bmpSplashDown.ToImageWithPalette(crtPal)
 
@@ -148,6 +154,15 @@ func (ss *splashScreen) Layout(outsideWidth, outsideHeight int) (int, int) {
 	return 320, 200
 }
 
-func (ss *splashScreen) Close() {
+func (ss *splashScreen) Close(msg any) {
+	ss.BasicWindow.Close(msg)
+}
 
+func (ss *splashScreen) setState(state int) {
+	if state == 1 {
+		ss.CompleteFadein()
+		ss.bgdPos = 1
+		ss.bmpSplashTitle.SetHeight(mkf.INT(ss.titleHeight) + 1)
+	}
+	ss.state = state
 }

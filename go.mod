@@ -4,6 +4,7 @@ go 1.19
 
 require (
 	github.com/boltdb/bolt v1.3.1
+	github.com/go-text/typesetting v0.0.0-20230905121921-abdbcca6e0eb
 	github.com/hajimehoshi/ebiten/v2 v2.6.4
 	golang.org/x/image v0.12.0
 )
