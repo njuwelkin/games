@@ -4,12 +4,14 @@ type global struct {
 	Text   TextLib
 	Config Config
 	Font   Font
+	G      gameData
 }
 
-var globalSetting global
+var globals global
 
 func initGlobalSetting() {
-	globalSetting.Text = loadText()
-	globalSetting.Config = loadConfig()
-	globalSetting.Font = newFont()
+	globals.Text = loadText()
+	globals.Config = loadConfig()
+	globals.Font = newFont()
+	globals.G = loadGameData()
 }

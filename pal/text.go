@@ -157,8 +157,8 @@ func loadText() TextLib {
 		panic("")
 	}
 	for i := 0; i < ret.CountMsgs; i++ {
-		offsetCrt := *((*mkf.DWORD)(oc.Get(i, unsafe.Sizeof(dw))))
-		offsetNext := *((*mkf.DWORD)(oc.Get(i+1, unsafe.Sizeof(dw))))
+		offsetCrt := *((*mkf.DWORD)(oc.Get(i)))
+		offsetNext := *((*mkf.DWORD)(oc.Get(i + 1)))
 		wcs := multiByteToWChar(CP_BIG5, temp[offsetCrt:offsetNext])
 		if wcs[len(wcs)-1] == '1' {
 			wcs[len(wcs)-1] = 0

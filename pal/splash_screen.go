@@ -105,7 +105,9 @@ func (ss *splashScreen) Update() error {
 		}
 	} else if ss.state == 1 {
 		ss.state = 2
-		ss.FadeOut(60)
+		ss.Timer().AddOneTimeEvent(10, func(int) {
+			ss.FadeOut(40)
+		})
 		ss.Timer().AddOneTimeEvent(60, func(int) {
 			ss.Close(nil)
 		})
@@ -161,8 +163,12 @@ func (ss *splashScreen) Close(msg any) {
 func (ss *splashScreen) setState(state int) {
 	if state == 1 {
 		ss.CompleteFadein()
+		//ss.FadeIn(60)
 		ss.bgdPos = 1
 		ss.bmpSplashTitle.SetHeight(mkf.INT(ss.titleHeight) + 1)
+		ss.Timer().AddOneTimeEvent(60, func(int) {
+			ss.state = 1
+		})
 	}
-	ss.state = state
+	//ss.state = state
 }

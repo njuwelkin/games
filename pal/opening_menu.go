@@ -47,13 +47,18 @@ func newOpeningMenu(parent ui.ParentCom) *openingMenu {
 	}
 
 	ret.Timer().AddOneTimeEvent(60, func(int) {
-		ret.menu = ui.NewMenu(0, 0, 200, 320, &ret, globalSetting.Font.NormalFont, false)
-		ret.menu.AddItem(globalSetting.Text.WordBuf[7], ui.Pos{X: 130, Y: 85})
-		ret.menu.AddItem(globalSetting.Text.WordBuf[8], ui.Pos{X: 130, Y: 110})
+		ret.menu = ui.NewMenu(0, 0, 200, 320, &ret, globals.Font.NormalFont, false)
+		ret.menu.AddItem(globals.Text.WordBuf[7], ui.Pos{X: 130, Y: 85})
+		ret.menu.AddItem(globals.Text.WordBuf[8], ui.Pos{X: 130, Y: 110})
 		ret.menu.OnSelect = func(idx int) {
 			if idx == 0 {
 				// new game
 				fmt.Println("new game")
+				ret.RemoveComponent(ret.menu)
+				ret.FadeOut(60)
+				ret.Timer().AddOneTimeEvent(50, func(int) {
+					ret.Close(0)
+				})
 			} else {
 				// pop load game menu
 				fmt.Println("load game")

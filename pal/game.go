@@ -17,10 +17,13 @@ type Game struct {
 	splashScreenID int
 	openingMenuID  int
 
+	terminated bool
+
 	input *ui.Input
 }
 
 func NewGame() (*Game, error) {
+	initGlobalSetting()
 	ret := Game{}
 	ret.input = &ui.DefaultInput
 	ss := newSplashScreen(&ret)
@@ -31,6 +34,9 @@ func NewGame() (*Game, error) {
 }
 
 func (g *Game) Update() error {
+	if g.terminated {
+		return ebiten.Termination
+	}
 	g.input.Update()
 	g.crtWin.Update()
 	return nil
@@ -50,7 +56,9 @@ func (g *Game) Notify(subId int, event ui.ComEvent, msg any) {
 			g.crtWin = newOpeningMenu(g)
 			g.openingMenuID = g.crtWin.ID()
 		} else if subId == g.openingMenuID {
-			//
+			g.crtWin = newMainFrame(g)
+		} else {
+			g.terminated = true
 		}
 	default:
 		panic("unknown event")

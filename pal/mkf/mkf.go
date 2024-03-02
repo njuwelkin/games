@@ -438,19 +438,24 @@ type _YJ_1_BLOCKHEADER struct {
 }
 
 type PlaneChunk struct {
-	data []byte
+	data    []byte
+	eleSize int
 }
 
-func NewPlaneChunk(data []byte) PlaneChunk {
+func NewPlaneChunk(data []byte, eleSize int) PlaneChunk {
 	for i := 0; i < len(data)-1; i += 2 {
 		//tmp := binary.LittleEndian.Uint16(buf[i : i+2])
 		p := (*uint16)(unsafe.Pointer(&data[i]))
 		*p = binary.LittleEndian.Uint16(data[i : i+2])
 	}
-	return PlaneChunk{data: data}
+	return PlaneChunk{data: data, eleSize: eleSize}
 }
 
-func (pc *PlaneChunk) Get(idx int, eleSize uintptr) unsafe.Pointer {
-	i := idx * int(eleSize)
+func (pc *PlaneChunk) Len() int {
+	return len(pc.data) / pc.eleSize
+}
+
+func (pc *PlaneChunk) Get(idx int) unsafe.Pointer {
+	i := idx * int(pc.eleSize)
 	return unsafe.Pointer(&pc.data[i])
 }

@@ -44,11 +44,16 @@ func (bw *BasicWindow) Update() error {
 	bw.timer.Update()
 	bw.tickCount++
 
-	for _, com := range bw.components {
-		if err := com.Update(); err != nil {
-			return err
-		}
+	if len(bw.components) > 0 {
+		return bw.components[len(bw.components)-1].Update()
 	}
+	/*
+		for _, com := range bw.components {
+			if err := com.Update(); err != nil {
+				return err
+			}
+		}
+	*/
 	return nil
 }
 
@@ -112,7 +117,19 @@ func (bw *BasicWindow) CompleteFadein() {
 }
 
 func (bw *BasicWindow) FadeOut(timeInTick int) {
-
+	bw.timer.AddRepeatEvent(1, timeInTick, func(remain int) {
+		crtTick := timeInTick - remain
+		fact := (1 - float64(crtTick)/float64(timeInTick))
+		for i := 0; i < 256; i++ {
+			c := bw.origPalette[i]
+			bw.palette[i] = color.RGBA{
+				R: uint8(float64(c.R) * fact),
+				G: uint8(float64(c.G) * fact),
+				B: uint8(float64(c.B) * fact),
+				A: c.A,
+			}
+		}
+	})
 }
 
 func (bw *BasicWindow) Draw(screen *ebiten.Image) {

@@ -7,8 +7,6 @@ import (
 )
 
 func main() {
-	initGlobalSetting()
-
 	game, err := NewGame()
 	if err != nil {
 		log.Fatal(err)
