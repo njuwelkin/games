@@ -29,4 +29,13 @@ func (mm *MgoMkf) GetChunk(chunkNum INT) (MgoChunk, error) {
 	return MgoChunk{fc}, nil
 }
 
+func (mm *MgoMkf) GetDecompressedChunkData(chunkNum INT) ([]byte, error) {
+	buf, err := mm.ReadChunk(chunkNum)
+	if err != nil {
+		return nil, err
+	}
+	cc := NewCompressedChunk(buf)
+	return cc.Decompress()
+}
+
 type MgoChunk struct{ BitMapChunk }

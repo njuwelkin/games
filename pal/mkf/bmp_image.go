@@ -124,7 +124,7 @@ func (bmp *BitMap) rleToImage(plt []color.RGBA, shadow bool) *ebiten.Image {
 	for tIdx < len(data) && data[tIdx] != 0 {
 		T := INT(data[tIdx])
 
-		if T&0x80 != 0 { //&& T <= 0x80+w {
+		if T&0x80 != 0 && T <= INT(0x80+w) {
 			x += int(T - 0x80)
 			y += x / w
 			x %= w

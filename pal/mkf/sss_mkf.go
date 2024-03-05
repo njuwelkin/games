@@ -68,7 +68,7 @@ func (sm *SSSMkf) GetEventObjectChunk() (*EventObjectChunk, error) {
 
 type ScriptEntry struct {
 	Operation WORD
-	Operand   [3]WORD
+	Operand   [3]WORD // Operand[0]: usually id of target obj
 }
 
 type MsgOffsetChunk struct {

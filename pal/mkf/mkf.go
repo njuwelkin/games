@@ -192,14 +192,14 @@ func (c *FrameChunk) getOffset(frameNum INT) INT {
 
 func (c *FrameChunk) GetFrame(frameNum INT) ([]byte, error) {
 	count := c.GetCount()
-	fmt.Printf("%d images in total\n", count)
+	//fmt.Printf("%d images in total\n", count)
 	if frameNum >= count {
 		return nil, fmt.Errorf("In GetFrame(), invailid frame number: %d", frameNum)
 	}
 	data := c.data
 	offset := c.getOffset(frameNum)
 	nextOffset := c.getOffset(frameNum + 1)
-	fmt.Printf("%d, %d\n", offset, nextOffset)
+	//fmt.Printf("%d, %d\n", offset, nextOffset)
 	//if offset == 0x18444 {
 	//	offset = WORD(offset)
 	//}

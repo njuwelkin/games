@@ -106,9 +106,9 @@ func (ss *splashScreen) Update() error {
 	} else if ss.state == 1 {
 		ss.state = 2
 		ss.Timer().AddOneTimeEvent(10, func(int) {
-			ss.FadeOut(40)
+			ss.FadeOut(30)
 		})
-		ss.Timer().AddOneTimeEvent(60, func(int) {
+		ss.Timer().AddOneTimeEvent(50, func(int) {
 			ss.Close(nil)
 		})
 	}

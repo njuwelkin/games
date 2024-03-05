@@ -131,7 +131,7 @@ func (m Map) GetTileBitmap(x, y, h, ucLayer byte) *mkf.BitMap {
 		ret, err = m.Sprite.GetTileBitMap(mkf.INT(frameNum))
 	}
 	if err != nil {
-		fmt.Println(err)
+		//fmt.Println(err)
 		return nil
 	}
 	return ret
@@ -171,6 +171,7 @@ func (m Map) BlitToSurface(rect Rect, ucLayer byte, surface *ebiten.Image, plt [
 				bmp := m.GetTileBitmap(byte(x), byte(y), byte(h), ucLayer)
 				if bmp == nil {
 					if ucLayer == 1 {
+						xPos += 32
 						continue
 					}
 					bmp = m.GetTileBitmap(0, 0, 0, 0)

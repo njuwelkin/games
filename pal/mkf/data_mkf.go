@@ -1,6 +1,9 @@
 package mkf
 
-import "unsafe"
+import (
+	"reflect"
+	"unsafe"
+)
 
 const (
 	MAX_STORE_ITEM            = 9
@@ -259,39 +262,51 @@ type EnemyPos struct {
 type Players [MAX_PLAYER_ROLES]WORD
 
 type PlayerRoles struct {
-	rgwAvatar              Players                                       // avatar (shown in status view)
-	rgwSpriteNumInBattle   Players                                       // sprite displayed in battle (in F.MKF)
-	rgwSpriteNum           Players                                       // sprite displayed in normal scene (in MGO.MKF)
-	rgwName                Players                                       // name of player class (in WORD.DAT)
-	rgwAttackAll           Players                                       // whether player can attack everyone in a bulk or not
-	rgwUnknown1            Players                                       // FIXME: ???
-	rgwLevel               Players                                       // level
-	rgwMaxHP               Players                                       // maximum HP
-	rgwMaxMP               Players                                       // maximum MP
-	rgwHP                  Players                                       // current HP
-	rgwMP                  Players                                       // current MP
-	rgwEquipment           [MAX_PLAYER_EQUIPMENTS][MAX_PLAYER_ROLES]WORD // equipments
-	rgwAttackStrength      Players                                       // normal attack strength
-	rgwMagicStrength       Players                                       // magical attack strength
-	rgwDefense             Players                                       // resistance to all kinds of attacking
-	rgwDexterity           Players                                       // dexterity
-	rgwFleeRate            Players                                       // chance of successful fleeing
-	rgwPoisonResistance    Players                                       // resistance to poison
-	rgwElementalResistance [NUM_MAGIC_ELEMENTAL][MAX_PLAYER_ROLES]WORD   // resistance to elemental magics
-	rgwUnknown2            Players                                       // FIXME: ???
-	rgwUnknown3            Players                                       // FIXME: ???
-	rgwUnknown4            Players                                       // FIXME: ???
-	rgwCoveredBy           Players                                       // who will cover me when I am low of HP or not sane
-	rgwMagic               [MAX_PLAYER_MAGICS][MAX_PLAYER_ROLES]WORD     // magics
-	rgwWalkFrames          Players                                       // walk frame (???)
-	rgwCooperativeMagic    Players                                       // cooperative magic
-	rgwUnknown5            Players                                       // FIXME: ???
-	rgwUnknown6            Players                                       // FIXME: ???
-	rgwDeathSound          Players                                       // sound played when player dies
-	rgwAttackSound         Players                                       // sound played when player attacks
-	rgwWeaponSound         Players                                       // weapon sound (???)
-	rgwCriticalSound       Players                                       // sound played when player make critical hits
-	rgwMagicSound          Players                                       // sound played when player is casting a magic
-	rgwCoverSound          Players                                       // sound played when player cover others
-	rgwDyingSound          Players                                       // sound played when player is dying
+	Avatar              Players                                       // avatar (shown in status view)
+	SpriteNumInBattle   Players                                       // sprite displayed in battle (in F.MKF)
+	SpriteNum           Players                                       // sprite displayed in normal scene (in MGO.MKF)
+	Name                Players                                       // name of player class (in WORD.DAT)
+	AttackAll           Players                                       // whether player can attack everyone in a bulk or not
+	Unknown1            Players                                       // FIXME: ???
+	Level               Players                                       // level
+	MaxHP               Players                                       // maximum HP
+	MaxMP               Players                                       // maximum MP
+	HP                  Players                                       // current HP
+	MP                  Players                                       // current MP
+	Equipment           [MAX_PLAYER_EQUIPMENTS][MAX_PLAYER_ROLES]WORD // equipments
+	AttackStrength      Players                                       // normal attack strength
+	MagicStrength       Players                                       // magical attack strength
+	Defense             Players                                       // resistance to all kinds of attacking
+	Dexterity           Players                                       // dexterity
+	FleeRate            Players                                       // chance of successful fleeing
+	PoisonResistance    Players                                       // resistance to poison
+	ElementalResistance [NUM_MAGIC_ELEMENTAL][MAX_PLAYER_ROLES]WORD   // resistance to elemental magics
+	Unknown2            Players                                       // FIXME: ???
+	Unknown3            Players                                       // FIXME: ???
+	Unknown4            Players                                       // FIXME: ???
+	CoveredBy           Players                                       // who will cover me when I am low of HP or not sane
+	Magic               [MAX_PLAYER_MAGICS][MAX_PLAYER_ROLES]WORD     // magics
+	WalkFrames          Players                                       // walk frame (???)
+	CooperativeMagic    Players                                       // cooperative magic
+	Unknown5            Players                                       // FIXME: ???
+	Unknown6            Players                                       // FIXME: ???
+	DeathSound          Players                                       // sound played when player dies
+	AttackSound         Players                                       // sound played when player attacks
+	WeaponSound         Players                                       // weapon sound (???)
+	CriticalSound       Players                                       // sound played when player make critical hits
+	MagicSound          Players                                       // sound played when player is casting a magic
+	CoverSound          Players                                       // sound played when player cover others
+	DyingSound          Players                                       // sound played when player is dying
+}
+
+func (prs *PlayerRoles) Raw() []WORD {
+	var w WORD
+	p := uintptr(unsafe.Pointer(prs))
+	size := unsafe.Sizeof(*prs) / unsafe.Sizeof(w)
+	ret := []WORD{}
+	sh := (*reflect.SliceHeader)(unsafe.Pointer(&ret))
+	sh.Data = p
+	sh.Len = int(size)
+	sh.Cap = int(size)
+	return ret
 }

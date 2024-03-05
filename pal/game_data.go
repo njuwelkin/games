@@ -4,23 +4,50 @@ import (
 	"github.com/njuwelkin/games/pal/mkf"
 )
 
-const ()
+const (
+	MAX_INVENTORY = 256
+)
 
 type gameData struct {
-	eventObjects      []mkf.EventObject
-	scenes            [mkf.MAX_SCENES]mkf.Scene
-	objects           [mkf.MAX_OBJECTS]mkf.Object
+	// might change, load from mkf or overwrite by save file
+	eventObjects []mkf.EventObject
+	scenes       [mkf.MAX_SCENES]mkf.Scene
+	objects      [mkf.MAX_OBJECTS]mkf.Object
+	playerRoles  mkf.PlayerRoles
+
+	// global data, load from mkf, never change
 	scriptEntries     []mkf.ScriptEntry
 	stores            []mkf.Store
 	enemies           []mkf.Enemy
 	enemyTeams        []mkf.EnemyTeam
-	playerRoles       mkf.PlayerRoles
 	magics            []mkf.Magic
 	battleFields      []mkf.BattleField
 	leveUpMagics      []mkf.LevelUpMagicAll
 	enemyPos          mkf.EnemyPos
 	levelUpExp        [mkf.MAX_LEVELS + 1]mkf.WORD
 	battleEffectIndex [10][2]mkf.WORD
+
+	// dynamic data
+	crtSceneNum   mkf.WORD // sdlpal-1
+	partyoffset   PAL_POS
+	cash          mkf.DWORD
+	crtPaletteNum mkf.WORD
+	night         bool
+	//axPartyMemberIndex mkf.WORD
+
+	// others
+	viewport            PAL_POS
+	parties             [mkf.MAX_PLAYABLE_PLAYER_ROLES]Party
+	trails              [mkf.MAX_PLAYABLE_PLAYER_ROLES]Trail
+	frameNum            mkf.DWORD
+	partyDirection      mkf.WORD
+	equipmentEffect     [mkf.MAX_PLAYER_EQUIPMENTS + 1]mkf.PlayerRoles
+	curEquipPart        int
+	scriptSuccess       bool
+	maxPartyMemberIndex mkf.WORD
+	inBattle            bool
+	inventory           [MAX_INVENTORY]Inventory
+	lastUnequippedItem  mkf.WORD
 }
 
 func loadGameData() gameData {
@@ -38,7 +65,7 @@ func loadGameData() gameData {
 	if err != nil {
 		panic(err.Error())
 	}
-	ret.scriptEntries = []mkf.ScriptEntry{}
+	ret.scriptEntries = make([]mkf.ScriptEntry, 0, sc.Len()) //[]mkf.ScriptEntry{}
 	for i := 0; i < sc.Len(); i++ {
 		entry := sc.GetScriptEntry(i)
 		ret.scriptEntries = append(ret.scriptEntries, *entry)
@@ -57,7 +84,7 @@ func loadGameData() gameData {
 	if err != nil {
 		panic(err.Error())
 	}
-	ret.stores = []mkf.Store{}
+	ret.stores = make([]mkf.Store, 0, stc.Len()) //[]mkf.Store{}
 	for i := 0; i < stc.Len(); i++ {
 		store := stc.GetStore(i)
 		ret.stores = append(ret.stores, store)
@@ -67,6 +94,7 @@ func loadGameData() gameData {
 	if err != nil {
 		panic(err.Error())
 	}
+	ret.enemies = make([]mkf.Enemy, 0, ec.Len())
 	for i := 0; i < ec.Len(); i++ {
 		enemy := ec.GetEnemy(i)
 		ret.enemies = append(ret.enemies, enemy)
@@ -76,6 +104,7 @@ func loadGameData() gameData {
 	if err != nil {
 		panic(err.Error())
 	}
+	ret.enemyTeams = make([]mkf.EnemyTeam, 0, etc.Len())
 	for i := 0; i < etc.Len(); i++ {
 		enemyTeam := etc.GetEnemyTeam(i)
 		ret.enemyTeams = append(ret.enemyTeams, enemyTeam)
@@ -85,6 +114,7 @@ func loadGameData() gameData {
 	if err != nil {
 		panic(err.Error())
 	}
+	ret.magics = make([]mkf.Magic, 0, mc.Len())
 	for i := 0; i < mc.Len(); i++ {
 		magic := mc.GetMagic(i)
 		ret.magics = append(ret.magics, magic)
@@ -94,6 +124,7 @@ func loadGameData() gameData {
 	if err != nil {
 		panic(err.Error())
 	}
+	ret.battleFields = make([]mkf.BattleField, 0, bfc.Len())
 	for i := 0; i < bfc.Len(); i++ {
 		battleField := bfc.GetBattleField(i)
 		ret.battleFields = append(ret.battleFields, battleField)
@@ -103,6 +134,7 @@ func loadGameData() gameData {
 	if err != nil {
 		panic(err.Error())
 	}
+	ret.leveUpMagics = make([]mkf.LevelUpMagicAll, 0, lumc.Len())
 	for i := 0; i < lumc.Len(); i++ {
 		lum := lumc.GetLevelUpMagic(i)
 		ret.leveUpMagics = append(ret.leveUpMagics, lum)
@@ -178,4 +210,37 @@ func (gd *gameData) loadDefault() {
 		panic(err.Error())
 	}
 	gd.playerRoles = *pr
+
+	// others
+	gd.crtSceneNum = 0
+	gd.cash = 0
+	gd.crtPaletteNum = 0
+	gd.night = false
+	gd.viewport = PAL_XY(0, 0)
+}
+
+func (gd *gameData) loadSaved(idx int) {
+
+}
+
+func (gd *gameData) updateEquipment() {
+
+}
+
+type Party struct {
+	PlayerRole  mkf.WORD  // player role
+	X, Y        mkf.SHORT // position
+	Frame       mkf.WORD  // current frame number
+	ImageOffset mkf.WORD  // FIXME: ???
+}
+
+type Trail struct {
+	X, Y      mkf.WORD // position
+	Direction mkf.WORD // direction
+}
+
+type Inventory struct {
+	Item        mkf.WORD   // item object code
+	Amount      mkf.USHORT // amount of this item
+	AmountInUse mkf.USHORT // in-use amount of this item
 }

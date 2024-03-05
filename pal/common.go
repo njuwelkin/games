@@ -1,5 +1,7 @@
 package main
 
+import "github.com/njuwelkin/games/pal/mkf"
+
 type Pos struct {
 	X, Y int
 }
@@ -29,3 +31,13 @@ func (pp PAL_POS) Pos() Pos {
 		Y: int(pp.Y()),
 	}
 }
+
+type PALDIRECTION = mkf.WORD
+
+const (
+	kDirSouth PALDIRECTION = iota
+	kDirWest
+	kDirNorth
+	kDirEast
+	kDirUnknown
+)
