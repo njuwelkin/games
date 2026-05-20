@@ -59,10 +59,20 @@ func (s *sceneScreen) Draw(screen *ebiten.Image) {
 	//y = globals.G.viewport.Y()
 	s.m.BlitToSurface(Rect{1152, 176, 320, 200}, 0, screen, s.GetPalette())
 	s.m.BlitToSurface(Rect{1152, 176, 320, 200}, 1, screen, s.GetPalette())
+	//PAL_ApplyWave(gpScreen)
+	//PAL_SceneDrawSprites()
+	//if need PAL_FadeIn()
 }
 
 func (s *sceneScreen) Layout(outsideWidth, outsideHeight int) (int, int) {
 	return 320, 200
+}
+
+func drawSprites() {
+	globals.NSpriteToDraw = 0
+	for i := 0; i <= globals.MaxPartyMemberIndex+globals.NFollower; i++ {
+
+	}
 }
 
 func loadSprites(idx, count uint16) [][]byte {
