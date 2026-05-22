@@ -1,20 +1,18 @@
 package main
 
-type global struct {
-	Text   TextLib
-	Config Config
-	Font   Font
-	G      gameData
-
-	UpdatedInBattle bool
-	ScriptSuccess   bool
-	NSpriteToDraw   int
-
+type Global struct {
+	Text                TextLib
+	Config              Config
+	Font                Font
+	G                   GameData
+	UpdatedInBattle     bool
+	ScriptSuccess       bool
+	NSpriteToDraw       int
 	MaxPartyMemberIndex int
 	NFollower           int
 }
 
-var globals global
+var Globals Global
 
 type Resource struct {
 	LoadFlags byte
@@ -27,9 +25,9 @@ type Resource struct {
 }
 
 func initGlobalSetting() {
-	globals.Text = loadText()
-	globals.Config = loadConfig()
-	globals.Font = newFont()
-	globals.G = loadGameData()
-	globals.UpdatedInBattle = false
+	Globals.Text = loadText()
+	Globals.Config = loadConfig()
+	Globals.Font = newFont()
+	Globals.G = LoadGameData()
+	Globals.UpdatedInBattle = false
 }

@@ -37,7 +37,7 @@ func newSceneScreen(parent ui.ParentCom, sceneNum mkf.WORD) *sceneScreen {
 	ret := sceneScreen{
 		BasicWindow: ui.NewBasicWindow(parent),
 		input:       &ui.DefaultInput,
-		Scene:       globals.G.scenes[sceneNum],
+		Scene:       Globals.G.Scenes[sceneNum],
 		waitForKey:  false,
 	}
 	ret.scriptExecutor = NewScriptExecutor(&ret)
@@ -51,22 +51,22 @@ func newSceneScreen(parent ui.ParentCom, sceneNum mkf.WORD) *sceneScreen {
 
 	// load sprites
 	idx := ret.Scene.EventObjectIndex
-	l := globals.G.scenes[sceneNum+1].EventObjectIndex - idx
+	l := Globals.G.Scenes[sceneNum+1].EventObjectIndex - idx
 	ret.eventObjectSprites = loadEventObjectSprites(idx, l)
 
 	// Load player sprites
 	ret.playerSprites = loadPlayerSprites()
 
 	// load palette
-	plt, err := mkf.GetPalette(mkf.INT(globals.G.crtPaletteNum), false)
+	plt, err := mkf.GetPalette(mkf.INT(Globals.G.CrtPaletteNum), false)
 	if err != nil {
 		panic(err.Error())
 	}
 	ret.BasicWindow.SetPalette(plt)
 
 	// Initialize party position
-	globals.G.partyoffset = PAL_XY(160, 112)
-	globals.G.viewport = PAL_XY(0, 0)
+	Globals.G.PartyOffset = PAL_XY(160, 112)
+	Globals.G.Viewport = PAL_XY(0, 0)
 
 	// Execute enter script
 	if ret.ScriptOnEnter != 0 {
@@ -90,8 +90,8 @@ func (s *sceneScreen) Update() error {
 
 func (s *sceneScreen) Draw(screen *ebiten.Image) {
 	// Draw map layers
-	x := int(globals.G.viewport.X())
-	y := int(globals.G.viewport.Y())
+	x := int(Globals.G.Viewport.X())
+	y := int(Globals.G.Viewport.Y())
 	// don't know why need +176, but it works
 	s.m.BlitToSurface(Rect{x, y + 176, 320, 200}, 0, screen, s.GetPalette())
 	s.m.BlitToSurface(Rect{x, y + 176, 320, 200}, 1, screen, s.GetPalette())
@@ -116,11 +116,11 @@ func (s *sceneScreen) handleInput() {
 }
 
 func (s *sceneScreen) checkEventObjectTriggers() {
-	g := &globals.G
-	scene := g.scenes[g.crtSceneNum]
+	g := &Globals.G
+	scene := g.Scenes[g.CrtSceneNum]
 
-	for i := scene.EventObjectIndex; i < g.scenes[g.crtSceneNum+1].EventObjectIndex; i++ {
-		evtObj := &g.eventObjects[i]
+	for i := scene.EventObjectIndex; i < g.Scenes[g.CrtSceneNum+1].EventObjectIndex; i++ {
+		evtObj := &g.EventObjects[i]
 
 		// Skip hidden or vanished objects
 		if evtObj.State < 0 || evtObj.VanishTime > 0 {
@@ -128,8 +128,8 @@ func (s *sceneScreen) checkEventObjectTriggers() {
 		}
 
 		// Check if player is near the event object
-		playerX := int(g.viewport.X()) + int(g.partyoffset.X())
-		playerY := int(g.viewport.Y()) + int(g.partyoffset.Y())
+		playerX := int(g.Viewport.X()) + int(g.PartyOffset.X())
+		playerY := int(g.Viewport.Y()) + int(g.PartyOffset.Y())
 
 		dx := absInt(playerX - int(evtObj.X))
 		dy := absInt(playerY - int(evtObj.Y))
@@ -152,16 +152,16 @@ func (s *sceneScreen) checkEventObjectTriggers() {
 }
 
 func (s *sceneScreen) drawSprites(screen *ebiten.Image) {
-	g := &globals.G
+	g := &Globals.G
 	s.spritesToDraw = s.spritesToDraw[:0]
 
 	// Draw players
-	for i := 0; i <= int(g.maxPartyMemberIndex)+globals.NFollower; i++ {
-		if i >= len(g.parties) { // || g.parties[i].PlayerRole == 0 {
+	for i := 0; i <= int(g.MaxPartyMemberIndex)+Globals.NFollower; i++ {
+		if i >= len(g.Parties) { // || g.Parties[i].PlayerRole == 0 {
 			continue
 		}
 
-		party := &g.parties[i]
+		party := &g.Parties[i]
 		spriteIdx := party.PlayerRole // - 1
 
 		if int(spriteIdx) >= len(s.playerSprites) || s.playerSprites[spriteIdx] == nil {
@@ -179,13 +179,13 @@ func (s *sceneScreen) drawSprites(screen *ebiten.Image) {
 		}
 
 		x := int(party.X) - int(bitmap.GetWidth()/2)
-		y := int(party.Y) + int(g.partyoffset.Y()) + 10
+		y := int(party.Y) + int(g.PartyOffset.Y()) + 10
 
 		s.spritesToDraw = append(s.spritesToDraw, spriteToDraw{
 			bitmap: bitmap,
 			x:      x,
 			y:      y,
-			layer:  int(g.partyoffset.Y()) + 6,
+			layer:  int(g.PartyOffset.Y()) + 6,
 		})
 	}
 	/*
@@ -307,11 +307,11 @@ func loadEventObjectSprites(idx, count mkf.WORD) [][]*mkf.BitMap {
 
 	for i := mkf.WORD(0); i < count; i++ {
 		evtIdx := idx + i
-		if int(evtIdx) >= len(globals.G.eventObjects) {
+		if int(evtIdx) >= len(Globals.G.EventObjects) {
 			continue
 		}
 
-		n := globals.G.eventObjects[evtIdx].SpriteNum
+		n := Globals.G.EventObjects[evtIdx].SpriteNum
 		if n == 0 {
 			ret[i] = nil
 			continue
@@ -333,7 +333,7 @@ func loadEventObjectSprites(idx, count mkf.WORD) [][]*mkf.BitMap {
 		}
 
 		ret[i] = frames
-		globals.G.eventObjects[evtIdx].SpriteFramesAuto = mkf.USHORT(numFrames)
+		Globals.G.EventObjects[evtIdx].SpriteFramesAuto = mkf.USHORT(numFrames)
 	}
 
 	return ret
@@ -349,7 +349,7 @@ func loadPlayerSprites() [][]*mkf.BitMap {
 	defer mgo.Close()
 
 	for i := 0; i < mkf.MAX_PLAYABLE_PLAYER_ROLES; i++ {
-		spriteNum := globals.G.playerRoles.SpriteNum[i]
+		spriteNum := Globals.G.PlayerRoles.SpriteNum[i]
 		if spriteNum == 0 {
 			ret[i] = nil
 			continue
@@ -377,7 +377,7 @@ func loadPlayerSprites() [][]*mkf.BitMap {
 }
 
 func checkObstacle(pos PAL_POS, checkEventObjects bool, selfObject mkf.WORD) bool {
-	g := &globals.G
+	g := &Globals.G
 
 	// Check map boundaries
 	if pos.X() < 0 || pos.Y() < 0 {
@@ -386,13 +386,13 @@ func checkObstacle(pos PAL_POS, checkEventObjects bool, selfObject mkf.WORD) boo
 
 	// Check event objects
 	if checkEventObjects {
-		scene := g.scenes[g.crtSceneNum]
-		for i := scene.EventObjectIndex; i < g.scenes[g.crtSceneNum+1].EventObjectIndex; i++ {
+		scene := g.Scenes[g.CrtSceneNum]
+		for i := scene.EventObjectIndex; i < g.Scenes[g.CrtSceneNum+1].EventObjectIndex; i++ {
 			if mkf.WORD(i+1) == selfObject {
 				continue
 			}
 
-			evtObj := &g.eventObjects[i]
+			evtObj := &g.EventObjects[i]
 			if evtObj.State < 0 || evtObj.VanishTime > 0 {
 				continue
 			}
@@ -411,27 +411,27 @@ func checkObstacle(pos PAL_POS, checkEventObjects bool, selfObject mkf.WORD) boo
 }
 
 func updatePartyGestures(forceUpdate bool) {
-	g := &globals.G
+	g := &Globals.G
 
-	for i := 0; i <= int(g.maxPartyMemberIndex); i++ {
-		if g.parties[i].PlayerRole == 0 {
+	for i := 0; i <= int(g.MaxPartyMemberIndex); i++ {
+		if g.Parties[i].PlayerRole == 0 {
 			continue
 		}
 
-		if forceUpdate || g.partyDirection != kDirUnknown {
+		if forceUpdate || g.PartyDirection != kDirUnknown {
 			// Advance frame for walking animation
-			g.parties[i].Frame = (g.parties[i].Frame + 1) % 4
+			g.Parties[i].Frame = (g.Parties[i].Frame + 1) % 4
 
 			// Update position based on direction
-			switch g.partyDirection {
+			switch g.PartyDirection {
 			case kDirNorth:
-				g.parties[i].Y -= 8
+				g.Parties[i].Y -= 8
 			case kDirSouth:
-				g.parties[i].Y += 8
+				g.Parties[i].Y += 8
 			case kDirWest:
-				g.parties[i].X -= 16
+				g.Parties[i].X -= 16
 			case kDirEast:
-				g.parties[i].X += 16
+				g.Parties[i].X += 16
 			}
 		}
 	}

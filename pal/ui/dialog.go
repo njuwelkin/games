@@ -4,7 +4,6 @@ import (
 	"image/color"
 
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/vector"
 	"golang.org/x/image/font"
 )
 
@@ -66,16 +65,18 @@ func (dialog *Dialog) Draw(screen *ebiten.Image) {
 	//for i := dialog.currentPage * dialog.maxLinesPerPage; i < utils.Min((dialog.currentPage+1)*dialog.maxLinesPerPage, len(dialog.lines)); i++ {
 	//	text.Draw(screen, string(dialog.lines[i]), dialog.face, 0, 0, color.White)
 	//}
-	// test, draw a rect
-	vector.DrawFilledRect(
-		screen,
-		0,           // x
-		0,           // y
-		100,         // width
-		75,          // height
-		color.White, // 使用预定义的白色
-		false,       // 是否抗锯齿（通常填 false 性能更好）
-	)
+	/*
+		// test, draw a rect
+		vector.DrawFilledRect(
+			screen,
+			0,           // x
+			0,           // y
+			100,         // width
+			75,          // height
+			color.White, // 使用预定义的白色
+			false,       // 是否抗锯齿（通常填 false 性能更好）
+		)
+	*/
 }
 
 func (dialog *Dialog) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {

@@ -17,7 +17,7 @@ func newMainFrame(parent ui.ParentCom) *mainFrame {
 		BasicWindow: ui.NewBasicWindow(parent),
 		input:       &ui.DefaultInput,
 	}
-	ret.ss = newSceneScreen(ret, globals.G.crtSceneNum)
+	ret.ss = newSceneScreen(ret, Globals.G.CrtSceneNum)
 	return &ret
 }
 

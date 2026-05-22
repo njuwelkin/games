@@ -41,7 +41,7 @@ func NewScriptExecutor(owner *sceneScreen) *ScriptExecutor {
 // RunTriggerScript 开始执行触发脚本（分步执行版本）
 // 返回 true 表示脚本执行完成，false 表示暂停需要继续调用 ContinueRun
 func (se *ScriptExecutor) RunTriggerScript(scriptEntry mkf.WORD, eventObjID mkf.WORD) bool {
-	g := &globals.G
+	g := &Globals.G
 
 	// 初始化状态
 	se.scriptEntry = scriptEntry
@@ -50,7 +50,7 @@ func (se *ScriptExecutor) RunTriggerScript(scriptEntry mkf.WORD, eventObjID mkf.
 	se.ended = false
 	se.suspended = false
 
-	globals.UpdatedInBattle = false
+	Globals.UpdatedInBattle = false
 
 	if eventObjID == 0xffff {
 		se.eventObjID = se.lastEventObjectID
@@ -59,10 +59,10 @@ func (se *ScriptExecutor) RunTriggerScript(scriptEntry mkf.WORD, eventObjID mkf.
 	se.lastEventObjectID = se.eventObjID
 
 	if se.eventObjID != 0 {
-		se.pEvtObj = &g.eventObjects[se.eventObjID-1]
+		se.pEvtObj = &g.EventObjects[se.eventObjID-1]
 	}
 
-	globals.ScriptSuccess = true
+	Globals.ScriptSuccess = true
 
 	// 执行脚本（分步执行）
 	return se.executeStep()
@@ -90,10 +90,10 @@ func (se *ScriptExecutor) IsEnded() bool {
 
 // executeStep 执行脚本步骤
 func (se *ScriptExecutor) executeStep() bool {
-	g := &globals.G
+	g := &Globals.G
 
 	for se.scriptEntry != 0 && !se.ended && !se.suspended {
-		pScript := &g.scriptEntries[se.scriptEntry]
+		pScript := &g.ScriptEntries[se.scriptEntry]
 
 		switch pScript.Operation {
 		case 0x0000:
@@ -181,7 +181,7 @@ func (se *ScriptExecutor) executeStep() bool {
 			//
 			// Show dialog in the middle part of the screen
 			//
-			dialog := ui.NewDialog(0, 0, 100, 300, se.owner, nil, globals.Font.NormalFont)
+			dialog := ui.NewDialog(0, 0, 100, 300, se.owner, nil, Globals.Font.NormalFont)
 			se.owner.AddComponent(&dialog)
 			se.dialog = &dialog
 			se.scriptEntry++
@@ -201,7 +201,7 @@ func (se *ScriptExecutor) executeStep() bool {
 			//
 			// Show dialog in the lower part of the screen
 			//
-			dialog := ui.NewDialog(0, 0, 200, 300, se.owner, nil, globals.Font.NormalFont)
+			dialog := ui.NewDialog(0, 0, 200, 300, se.owner, nil, Globals.Font.NormalFont)
 			se.owner.AddComponent(&dialog)
 			se.dialog = &dialog
 			se.scriptEntry++
@@ -220,8 +220,8 @@ func (se *ScriptExecutor) executeStep() bool {
 			//
 			textNum := pScript.Operand[0]
 			text := []rune{}
-			if textNum <= mkf.WORD(globals.Text.CountMsgs) {
-				text = globals.Text.MsgBuf[textNum]
+			if textNum <= mkf.WORD(Globals.Text.CountMsgs) {
+				text = Globals.Text.MsgBuf[textNum]
 			}
 			se.dialog.AppendLine(text)
 			se.scriptEntry++
@@ -243,7 +243,7 @@ func (se *ScriptExecutor) executeStep() bool {
 func createDialog(owner ui.ParentCom, fontColor, numCharFace mkf.WORD, playingRNG bool) *ui.Dialog {
 	var avatarImg *ebiten.Image = nil
 	if numCharFace > 0 {
-		rgm, err := mkf.NewRgmMkf("../../RGM.MKF")
+		rgm, err := mkf.NewRgmMkf("RGM.MKF")
 		if err != nil {
 			panic(err.Error())
 		}
@@ -252,13 +252,13 @@ func createDialog(owner ui.ParentCom, fontColor, numCharFace mkf.WORD, playingRN
 		if err != nil || bmp == nil {
 			panic(err.Error())
 		}
-		plt, err := mkf.GetPalette(mkf.INT(globals.G.crtPaletteNum), false)
+		plt, err := mkf.GetPalette(mkf.INT(Globals.G.CrtPaletteNum), false)
 		if err != nil {
 			panic(err.Error())
 		}
 		avatarImg = bmp.ToImageWithPalette(plt)
 	}
-	dialog := ui.NewDialog(0, 0, 200, 300, owner, avatarImg, globals.Font.NormalFont)
+	dialog := ui.NewDialog(0, 0, 200, 300, owner, avatarImg, Globals.Font.NormalFont)
 
 	return &dialog
 }

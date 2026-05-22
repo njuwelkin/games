@@ -23,11 +23,11 @@ import (
 --
 */
 func runTriggerScript(scriptEntry mkf.WORD, eventObjID mkf.WORD) {
-	g := &globals.G
+	g := &Globals.G
 
 	var lastEventObjectID mkf.WORD = 0
 	nextScriptEntry := scriptEntry
-	globals.UpdatedInBattle = false
+	Globals.UpdatedInBattle = false
 
 	if eventObjID == 0xffff {
 		eventObjID = lastEventObjectID
@@ -36,10 +36,10 @@ func runTriggerScript(scriptEntry mkf.WORD, eventObjID mkf.WORD) {
 	lastEventObjectID = eventObjID
 	var pEvtObj *mkf.EventObject
 	if eventObjID != 0 {
-		pEvtObj = &g.eventObjects[eventObjID-1]
+		pEvtObj = &g.EventObjects[eventObjID-1]
 	}
 
-	globals.ScriptSuccess = true
+	Globals.ScriptSuccess = true
 
 	//
 	// Set the default dialog speed.
@@ -48,7 +48,7 @@ func runTriggerScript(scriptEntry mkf.WORD, eventObjID mkf.WORD) {
 
 	ended := false
 	for scriptEntry != 0 && !ended {
-		pScript := &g.scriptEntries[scriptEntry]
+		pScript := &g.ScriptEntries[scriptEntry]
 		switch pScript.Operation {
 		case 0x0000:
 			//
@@ -298,13 +298,13 @@ func runTriggerScript(scriptEntry mkf.WORD, eventObjID mkf.WORD) {
 --
 */
 func interpretInstruction(scriptEntry mkf.WORD, eventObjID mkf.WORD) mkf.WORD {
-	g := &globals.G
+	g := &Globals.G
 
-	pScript := g.scriptEntries[scriptEntry]
+	pScript := g.ScriptEntries[scriptEntry]
 
 	var pEvtObj *mkf.EventObject
 	if eventObjID != 0 {
-		pEvtObj = &g.eventObjects[eventObjID-1]
+		pEvtObj = &g.EventObjects[eventObjID-1]
 	}
 
 	var pCurrent *mkf.EventObject
@@ -318,15 +318,15 @@ func interpretInstruction(scriptEntry mkf.WORD, eventObjID mkf.WORD) mkf.WORD {
 			// HACK for Dream 2.11 to avoid crash
 			i -= 0x9000
 		}
-		pCurrent = &(g.eventObjects[i])
+		pCurrent = &(g.EventObjects[i])
 		//curEventObjectID = pScript.Operand[0]
 	}
 
 	var iPlayerRole mkf.WORD
 	if pScript.Operand[0] < mkf.MAX_PLAYABLE_PLAYER_ROLES {
-		iPlayerRole = g.parties[pScript.Operand[0]].PlayerRole
+		iPlayerRole = g.Parties[pScript.Operand[0]].PlayerRole
 	} else {
-		iPlayerRole = g.parties[0].PlayerRole
+		iPlayerRole = g.Parties[0].PlayerRole
 	}
 
 	switch pScript.Operation {
@@ -360,7 +360,7 @@ func interpretInstruction(scriptEntry mkf.WORD, eventObjID mkf.WORD) mkf.WORD {
 		//
 		// Walk straight to the specified position, at a lower speed
 		//
-		if mkf.DWORD(eventObjID&1)^(g.frameNum&1) != 0 {
+		if mkf.DWORD(eventObjID&1)^(g.FrameNum&1) != 0 {
 			if !npcWalkTo(eventObjID, mkf.INT(pScript.Operand[0]), mkf.INT(pScript.Operand[1]), mkf.INT(pScript.Operand[2]), 2) {
 				scriptEntry--
 			}
@@ -371,8 +371,8 @@ func interpretInstruction(scriptEntry mkf.WORD, eventObjID mkf.WORD) mkf.WORD {
 		//
 		// Set the position of the event object, relative to the party
 		//
-		pCurrent.X = pScript.Operand[1] + uint16(g.viewport.X()) + uint16(g.partyoffset.X())
-		pCurrent.Y = pScript.Operand[2] + uint16(g.viewport.Y()) + uint16(g.partyoffset.Y())
+		pCurrent.X = pScript.Operand[1] + uint16(g.Viewport.X()) + uint16(g.PartyOffset.X())
+		pCurrent.Y = pScript.Operand[2] + uint16(g.Viewport.Y()) + uint16(g.PartyOffset.Y())
 	case 0x0013:
 		//
 		// Set the position of the event object
@@ -389,8 +389,8 @@ func interpretInstruction(scriptEntry mkf.WORD, eventObjID mkf.WORD) mkf.WORD {
 		//
 		// Set the direction and gesture for a party member
 		//
-		g.partyDirection = pScript.Operand[0]
-		g.parties[pScript.Operand[2]].Frame = g.partyDirection*3 + pScript.Operand[1]
+		g.PartyDirection = pScript.Operand[0]
+		g.Parties[pScript.Operand[2]].Frame = g.PartyDirection*3 + pScript.Operand[1]
 	case 0x0016:
 		//
 		// Set the direction and gesture for an event object
@@ -404,7 +404,7 @@ func interpretInstruction(scriptEntry mkf.WORD, eventObjID mkf.WORD) mkf.WORD {
 		// set the player's extra attribute
 		//
 		i := pScript.Operand[0] - 0xB
-		base := (*mkf.WORD)(unsafe.Pointer(&g.equipmentEffect[i])) // HACKHACK
+		base := (*mkf.WORD)(unsafe.Pointer(&g.EquipmentEffect[i])) // HACKHACK
 		p := (*mkf.WORD)(unsafe.Pointer(uintptr(unsafe.Pointer(base)) + uintptr(pScript.Operand[1]*mkf.MAX_PLAYER_ROLES+eventObjID)))
 		*p = mkf.WORD(pScript.Operand[2])
 	case 0x0018:
@@ -412,27 +412,27 @@ func interpretInstruction(scriptEntry mkf.WORD, eventObjID mkf.WORD) mkf.WORD {
 		// Equip the selected item
 		//
 		i := pScript.Operand[0] - 0x0B
-		g.curEquipPart = int(i)
+		g.CurEquipPart = int(i)
 
 		//
 		// The wEventObjectID parameter here should indicate the player role
 		//
 		//PAL_RemoveEquipmentEffect(wEventObjectID, i);
 
-		if g.playerRoles.Equipment[i][eventObjID] != pScript.Operand[1] {
-			w := g.playerRoles.Equipment[i][eventObjID]
-			g.playerRoles.Equipment[i][eventObjID] = pScript.Operand[1]
+		if g.PlayerRoles.Equipment[i][eventObjID] != pScript.Operand[1] {
+			w := g.PlayerRoles.Equipment[i][eventObjID]
+			g.PlayerRoles.Equipment[i][eventObjID] = pScript.Operand[1]
 
 			i, foundI := getItemIndexToInventory(pScript.Operand[1])
 			_, foundJ := getItemIndexToInventory(w)
-			if foundI && i < MAX_INVENTORY && g.inventory[i].Amount == 1 && w != 0 && !foundJ {
+			if foundI && i < MAX_INVENTORY && g.Inventory[i].Amount == 1 && w != 0 && !foundJ {
 				//
 				// When the number of items you want to wear is 1
 				// and the number of items you are wearing is also 1,
 				// replace them directly, instead of removing items
 				// and adding them at the end of the item menu
 				//
-				g.inventory[i].Item = w
+				g.Inventory[i].Item = w
 			} else {
 				addItemIndexToInventory(pScript.Operand[1], -1)
 
@@ -441,7 +441,7 @@ func interpretInstruction(scriptEntry mkf.WORD, eventObjID mkf.WORD) mkf.WORD {
 				}
 			}
 
-			g.lastUnequippedItem = w
+			g.LastUnequippedItem = w
 		}
 	case 0x0019:
 		//
@@ -455,19 +455,19 @@ func interpretInstruction(scriptEntry mkf.WORD, eventObjID mkf.WORD) mkf.WORD {
 		} else {
 			iPlayerRole = pScript.Operand[2] - 1
 		}
-		base := (*mkf.WORD)(unsafe.Pointer(&g.playerRoles))
+		base := (*mkf.WORD)(unsafe.Pointer(&g.PlayerRoles))
 		p := (*mkf.WORD)(unsafe.Pointer(uintptr(unsafe.Pointer(base)) + uintptr(pScript.Operand[0]*mkf.MAX_PLAYER_ROLES+iPlayerRole)))
 		*p += mkf.WORD(pScript.Operand[1])
 	case 0x001A:
 		//
 		// Set player's stat
 		//
-		p := utils.WordArray(unsafe.Pointer(&g.playerRoles), unsafe.Sizeof(g.playerRoles))
-		if g.curEquipPart != -1 {
+		p := utils.WordArray(unsafe.Pointer(&g.PlayerRoles), unsafe.Sizeof(g.PlayerRoles))
+		if g.CurEquipPart != -1 {
 			//
 			// In the progress of equipping items
 			//
-			p = utils.WordArray(unsafe.Pointer(&g.equipmentEffect[g.curEquipPart]), unsafe.Sizeof(g.equipmentEffect[g.curEquipPart]))
+			p = utils.WordArray(unsafe.Pointer(&g.EquipmentEffect[g.CurEquipPart]), unsafe.Sizeof(g.EquipmentEffect[g.CurEquipPart]))
 		}
 		if pScript.Operand[2] == 0 {
 			//
@@ -484,14 +484,14 @@ func interpretInstruction(scriptEntry mkf.WORD, eventObjID mkf.WORD) mkf.WORD {
 		// Increase/decrease player's HP
 		//
 		if pScript.Operand[0] != 0 {
-			g.scriptSuccess = false
+			g.ScriptSuccess = false
 			//
 			// Apply to everyone
 			//
-			for i := uint16(0); i <= g.maxPartyMemberIndex; i++ {
-				w := g.parties[i].PlayerRole
+			for i := uint16(0); i <= g.MaxPartyMemberIndex; i++ {
+				w := g.Parties[i].PlayerRole
 				if increaseHPMP(w, (mkf.SHORT)(pScript.Operand[1]), 0) {
-					g.scriptSuccess = true
+					g.ScriptSuccess = true
 				}
 			}
 		} else {
@@ -499,7 +499,7 @@ func interpretInstruction(scriptEntry mkf.WORD, eventObjID mkf.WORD) mkf.WORD {
 			// Apply to one player. The wEventObjectID parameter should indicate the player role.
 			//
 			if !increaseHPMP(eventObjID, (mkf.SHORT)(pScript.Operand[1]), 0) {
-				g.scriptSuccess = false
+				g.ScriptSuccess = false
 			}
 		}
 	case 0x001C:
@@ -510,8 +510,8 @@ func interpretInstruction(scriptEntry mkf.WORD, eventObjID mkf.WORD) mkf.WORD {
 			//
 			// Apply to everyone
 			//
-			for i := uint16(0); i <= g.maxPartyMemberIndex; i++ {
-				w := g.parties[i].PlayerRole
+			for i := uint16(0); i <= g.MaxPartyMemberIndex; i++ {
+				w := g.Parties[i].PlayerRole
 				increaseHPMP(w, 0, (mkf.SHORT)(pScript.Operand[1]))
 			}
 		} else {
@@ -528,8 +528,8 @@ func interpretInstruction(scriptEntry mkf.WORD, eventObjID mkf.WORD) mkf.WORD {
 			//
 			// Apply to everyone
 			//
-			for i := uint16(0); i <= g.maxPartyMemberIndex; i++ {
-				w := g.parties[i].PlayerRole
+			for i := uint16(0); i <= g.MaxPartyMemberIndex; i++ {
+				w := g.Parties[i].PlayerRole
 				increaseHPMP(w, (mkf.SHORT)(pScript.Operand[1]), (mkf.SHORT)(pScript.Operand[1]))
 			}
 		} else {
@@ -543,13 +543,13 @@ func interpretInstruction(scriptEntry mkf.WORD, eventObjID mkf.WORD) mkf.WORD {
 		// Increase or decrease cash by the specified amount
 		//
 		if (mkf.SHORT)(pScript.Operand[0]) < 0 &&
-			g.cash < mkf.DWORD(-(mkf.SHORT)(pScript.Operand[0])) {
+			g.Cash < mkf.DWORD(-(mkf.SHORT)(pScript.Operand[0])) {
 			//
 			// not enough cash
 			//
 			scriptEntry = pScript.Operand[1] - 1
 		} else {
-			g.cash += mkf.DWORD(mkf.SHORT(pScript.Operand[0]))
+			g.Cash += mkf.DWORD(mkf.SHORT(pScript.Operand[0]))
 		}
 	case 0x001F:
 		//
@@ -589,24 +589,24 @@ func interpretInstruction(scriptEntry mkf.WORD, eventObjID mkf.WORD) mkf.WORD {
 			//
 			// Apply to everyone
 			//
-			g.scriptSuccess = false
-			for i := uint16(0); i <= g.maxPartyMemberIndex; i++ {
-				w := g.parties[i].PlayerRole
-				if g.playerRoles.HP[w] == 0 {
-					g.playerRoles.HP[w] = g.playerRoles.MaxHP[w] * pScript.Operand[1] / 10
+			g.ScriptSuccess = false
+			for i := uint16(0); i <= g.MaxPartyMemberIndex; i++ {
+				w := g.Parties[i].PlayerRole
+				if g.PlayerRoles.HP[w] == 0 {
+					g.PlayerRoles.HP[w] = g.PlayerRoles.MaxHP[w] * pScript.Operand[1] / 10
 					// Note: Need to implement PAL_CurePoisonByLevel and PAL_RemovePlayerStatus
-					g.scriptSuccess = true
+					g.ScriptSuccess = true
 				}
 			}
 		} else {
 			//
 			// Apply to one player
 			//
-			if g.playerRoles.HP[eventObjID] == 0 {
-				g.playerRoles.HP[eventObjID] = g.playerRoles.MaxHP[eventObjID] * pScript.Operand[1] / 10
+			if g.PlayerRoles.HP[eventObjID] == 0 {
+				g.PlayerRoles.HP[eventObjID] = g.PlayerRoles.MaxHP[eventObjID] * pScript.Operand[1] / 10
 				// Note: Need to implement PAL_CurePoisonByLevel and PAL_RemovePlayerStatus
 			} else {
-				g.scriptSuccess = false
+				g.ScriptSuccess = false
 			}
 		}
 	case 0x0023:
@@ -618,19 +618,19 @@ func interpretInstruction(scriptEntry mkf.WORD, eventObjID mkf.WORD) mkf.WORD {
 			// Remove all equipments
 			//
 			for i := 0; i < mkf.MAX_PLAYER_EQUIPMENTS; i++ {
-				w := g.playerRoles.Equipment[i][iPlayerRole]
+				w := g.PlayerRoles.Equipment[i][iPlayerRole]
 				if w != 0 {
 					addItemIndexToInventory(w, 1)
-					g.playerRoles.Equipment[i][iPlayerRole] = 0
+					g.PlayerRoles.Equipment[i][iPlayerRole] = 0
 				}
 				// Note: Need to implement PAL_RemoveEquipmentEffect
 			}
 		} else {
-			w := g.playerRoles.Equipment[pScript.Operand[1]-1][iPlayerRole]
+			w := g.PlayerRoles.Equipment[pScript.Operand[1]-1][iPlayerRole]
 			if w != 0 {
 				// Note: Need to implement PAL_RemoveEquipmentEffect
 				addItemIndexToInventory(w, 1)
-				g.playerRoles.Equipment[pScript.Operand[1]-1][iPlayerRole] = 0
+				g.PlayerRoles.Equipment[pScript.Operand[1]-1][iPlayerRole] = 0
 			}
 		}
 	case 0x0024:
@@ -736,14 +736,14 @@ func interpretInstruction(scriptEntry mkf.WORD, eventObjID mkf.WORD) mkf.WORD {
 		//
 		// Teleport the party out of the scene
 		//
-		if !g.inBattle &&
-			g.scenes[g.crtSceneNum-1].ScriptOnTeleport != 0 {
-			runTriggerScript(g.scenes[g.crtSceneNum-1].ScriptOnTeleport, 0xFFFF)
+		if !g.InBattle &&
+			g.Scenes[g.CrtSceneNum-1].ScriptOnTeleport != 0 {
+			runTriggerScript(g.Scenes[g.CrtSceneNum-1].ScriptOnTeleport, 0xFFFF)
 		} else {
 			//
 			// failed
 			//
-			g.scriptSuccess = false
+			g.ScriptSuccess = false
 			scriptEntry = pScript.Operand[0] - 1
 		}
 	case 0x0039:
@@ -772,7 +772,7 @@ func interpretInstruction(scriptEntry mkf.WORD, eventObjID mkf.WORD) mkf.WORD {
 		//
 		// Mark the script as failed
 		//
-		g.scriptSuccess = false
+		g.ScriptSuccess = false
 	case 0x0042:
 		//
 		// Simulate a magic for player
@@ -801,12 +801,12 @@ func interpretInstruction(scriptEntry mkf.WORD, eventObjID mkf.WORD) mkf.WORD {
 			var xOffset, yOffset int
 			var x, y int
 
-			if g.partyDirection == kDirWest || g.partyDirection == kDirSouth {
+			if g.PartyDirection == kDirWest || g.PartyDirection == kDirSouth {
 				xOffset = 16
 			} else {
 				xOffset = -16
 			}
-			if g.partyDirection == kDirWest || g.partyDirection == kDirNorth {
+			if g.PartyDirection == kDirWest || g.PartyDirection == kDirNorth {
 				yOffset = 8
 			} else {
 				yOffset = -8
@@ -815,20 +815,20 @@ func interpretInstruction(scriptEntry mkf.WORD, eventObjID mkf.WORD) mkf.WORD {
 			x = int(pScript.Operand[0]*32 + pScript.Operand[2]*16)
 			y = int(pScript.Operand[1]*16 + pScript.Operand[2]*8)
 
-			x -= int(g.partyoffset.X())
-			y -= int(g.partyoffset.Y())
+			x -= int(g.PartyOffset.X())
+			y -= int(g.PartyOffset.Y())
 
-			g.viewport = PAL_XY(uint32(x), uint32(y))
+			g.Viewport = PAL_XY(uint32(x), uint32(y))
 
-			x = int(g.partyoffset.X())
-			y = int(g.partyoffset.Y())
+			x = int(g.PartyOffset.X())
+			y = int(g.PartyOffset.Y())
 
 			for i := 0; i < mkf.MAX_PLAYABLE_PLAYER_ROLES; i++ {
-				g.parties[i].X = mkf.SHORT(x)
-				g.parties[i].Y = mkf.SHORT(y)
-				g.trails[i].X = mkf.WORD(uint32(x) + g.viewport.X())
-				g.trails[i].Y = mkf.WORD(uint32(y) + g.viewport.Y())
-				g.trails[i].Direction = g.partyDirection
+				g.Parties[i].X = mkf.SHORT(x)
+				g.Parties[i].Y = mkf.SHORT(y)
+				g.Trails[i].X = mkf.WORD(uint32(x) + g.Viewport.X())
+				g.Trails[i].Y = mkf.WORD(uint32(y) + g.Viewport.Y())
+				g.Trails[i].Direction = g.PartyDirection
 
 				x += xOffset
 				y += yOffset
@@ -901,12 +901,12 @@ func interpretInstruction(scriptEntry mkf.WORD, eventObjID mkf.WORD) mkf.WORD {
 		//
 		// use the day palette
 		//
-		g.night = false
+		g.Night = false
 	case 0x0054:
 		//
 		// use the night palette
 		//
-		g.night = true
+		g.Night = true
 	case 0x0055:
 		//
 		// Add magic to a player
@@ -933,22 +933,22 @@ func interpretInstruction(scriptEntry mkf.WORD, eventObjID mkf.WORD) mkf.WORD {
 		// Change to the specified scene
 		//
 		if pScript.Operand[0] > 0 && pScript.Operand[0] <= mkf.MAX_SCENES &&
-			g.crtSceneNum != pScript.Operand[0] {
+			g.CrtSceneNum != pScript.Operand[0] {
 			//
 			// Set data to load the scene in the next frame
 			//
-			g.crtSceneNum = pScript.Operand[0]
+			g.CrtSceneNum = pScript.Operand[0]
 			// Note: Need to implement PAL_SetLoadFlags and PAL_LoadResources
 			//PAL_SetLoadFlags(kLoadScene);
 			//gpGlobals->fEnteringScene = TRUE;
-			g.viewport = PAL_XY(0, 0)
+			g.Viewport = PAL_XY(0, 0)
 		}
 	case 0x005A:
 		//
 		// Halve the player's HP
 		// The wEventObjectID parameter here should indicate the player role
 		//
-		g.playerRoles.HP[eventObjID] /= 2
+		g.PlayerRoles.HP[eventObjID] /= 2
 	case 0x005B:
 		//
 		// Halve the enemy's HP
@@ -974,7 +974,7 @@ func interpretInstruction(scriptEntry mkf.WORD, eventObjID mkf.WORD) mkf.WORD {
 		// Kill the player immediately
 		// The wEventObjectID parameter here should indicate the player role
 		//
-		g.playerRoles.HP[eventObjID] = 0
+		g.PlayerRoles.HP[eventObjID] = 0
 	case 0x0060:
 		//
 		// Immediate KO of the enemy
@@ -1004,8 +1004,8 @@ func interpretInstruction(scriptEntry mkf.WORD, eventObjID mkf.WORD) mkf.WORD {
 		//
 		// Set the player's sprite
 		//
-		g.playerRoles.SpriteNum[pScript.Operand[0]] = pScript.Operand[1]
-		if !g.inBattle && pScript.Operand[2] != 0 {
+		g.PlayerRoles.SpriteNum[pScript.Operand[0]] = pScript.Operand[1]
+		if !g.InBattle && pScript.Operand[2] != 0 {
 			//PAL_SetLoadFlags(kLoadPlayerSprite);
 			//PAL_LoadResources();
 		}
@@ -1013,23 +1013,23 @@ func interpretInstruction(scriptEntry mkf.WORD, eventObjID mkf.WORD) mkf.WORD {
 		//
 		// Set the player party
 		//
-		g.maxPartyMemberIndex = 0
+		g.MaxPartyMemberIndex = 0
 		for i := 0; i < 3; i++ {
 			if pScript.Operand[i] != 0 {
-				g.parties[g.maxPartyMemberIndex].PlayerRole =
+				g.Parties[g.MaxPartyMemberIndex].PlayerRole =
 					pScript.Operand[i] - 1
 
-				g.maxPartyMemberIndex++
+				g.MaxPartyMemberIndex++
 			}
 		}
 
-		if g.maxPartyMemberIndex == 0 {
+		if g.MaxPartyMemberIndex == 0 {
 			// HACK for Dream 2.11
-			g.parties[0].PlayerRole = 0
-			g.maxPartyMemberIndex = 1
+			g.Parties[0].PlayerRole = 0
+			g.MaxPartyMemberIndex = 1
 		}
 
-		g.maxPartyMemberIndex--
+		g.MaxPartyMemberIndex--
 
 		//
 		// Reload the player sprites
@@ -1054,8 +1054,8 @@ func interpretInstruction(scriptEntry mkf.WORD, eventObjID mkf.WORD) mkf.WORD {
 		// Jump if the player is in the party
 		//
 		found := false
-		for i := uint16(0); i <= g.maxPartyMemberIndex; i++ {
-			if g.parties[i].PlayerRole == pScript.Operand[0]-1 {
+		for i := uint16(0); i <= g.MaxPartyMemberIndex; i++ {
+			if g.Parties[i].PlayerRole == pScript.Operand[0]-1 {
 				found = true
 				break
 			}
@@ -1095,7 +1095,7 @@ func interpretInstruction(scriptEntry mkf.WORD, eventObjID mkf.WORD) mkf.WORD {
 		//
 		// Switch day/night palette
 		//
-		g.night = !g.night
+		g.Night = !g.Night
 	case 0x0081:
 		//
 		// Jump if the party is not facing the event object
@@ -1167,7 +1167,7 @@ func interpretInstruction(scriptEntry mkf.WORD, eventObjID mkf.WORD) mkf.WORD {
 		//
 		// Halve cash
 		//
-		g.cash /= 2
+		g.Cash /= 2
 	case 0x0090:
 		//
 		// Set object script
@@ -1206,7 +1206,7 @@ func interpretInstruction(scriptEntry mkf.WORD, eventObjID mkf.WORD) mkf.WORD {
 		//
 		// Jump if scene equals
 		//
-		if g.crtSceneNum == pScript.Operand[0] {
+		if g.CrtSceneNum == pScript.Operand[0] {
 			scriptEntry = pScript.Operand[1] - 1
 		}
 	case 0x0096:
@@ -1241,8 +1241,8 @@ func interpretInstruction(scriptEntry mkf.WORD, eventObjID mkf.WORD) mkf.WORD {
 				endID = startID
 			}
 			for i := startID; i <= endID; i++ {
-				if i-1 < mkf.WORD(len(g.eventObjects)) {
-					g.eventObjects[i-1].State = state
+				if i-1 < mkf.WORD(len(g.EventObjects)) {
+					g.EventObjects[i-1].State = state
 				}
 			}
 		}
@@ -1276,13 +1276,13 @@ func interpretInstruction(scriptEntry mkf.WORD, eventObjID mkf.WORD) mkf.WORD {
 		// Set the positions of all party members to the same as the first one
 		//
 		for i := 0; i < mkf.MAX_PLAYABLE_PLAYER_ROLES; i++ {
-			g.trails[i].Direction = g.partyDirection
-			g.trails[i].X = mkf.WORD(int(g.parties[0].X) + int(g.viewport.X()))
-			g.trails[i].Y = mkf.WORD(int(g.parties[0].Y) + int(g.viewport.Y()))
+			g.Trails[i].Direction = g.PartyDirection
+			g.Trails[i].X = mkf.WORD(int(g.Parties[0].X) + int(g.Viewport.X()))
+			g.Trails[i].Y = mkf.WORD(int(g.Parties[0].Y) + int(g.Viewport.Y()))
 		}
-		for i := uint16(1); i <= g.maxPartyMemberIndex; i++ {
-			g.parties[i].X = g.parties[0].X
-			g.parties[i].Y = g.parties[0].Y - 1
+		for i := uint16(1); i <= g.MaxPartyMemberIndex; i++ {
+			g.Parties[i].X = g.Parties[0].X
+			g.Parties[i].Y = g.Parties[0].Y - 1
 		}
 		// Note: Need to implement PAL_UpdatePartyGestures
 	case 0x00A2:
@@ -1318,16 +1318,16 @@ func interpretInstruction(scriptEntry mkf.WORD, eventObjID mkf.WORD) mkf.WORD {
 }
 
 func npcWalkOneStep(evtObjID mkf.WORD, speed mkf.INT) {
-	g := &globals.G
+	g := &Globals.G
 
 	//
 	// Check for invalid parameters
 	//
-	if evtObjID == 0 || evtObjID > mkf.WORD(len(g.eventObjects)) {
+	if evtObjID == 0 || evtObjID > mkf.WORD(len(g.EventObjects)) {
 		return
 	}
 
-	p := &g.eventObjects[evtObjID-1]
+	p := &g.EventObjects[evtObjID-1]
 
 	//
 	// Move the event object by the specified direction
@@ -1361,8 +1361,8 @@ func npcWalkOneStep(evtObjID mkf.WORD, speed mkf.INT) {
 }
 
 func npcWalkTo(evtObjID mkf.WORD, x, y, h, speed mkf.INT) bool {
-	g := &globals.G
-	pEvtObj := &g.eventObjects[evtObjID-1]
+	g := &Globals.G
+	pEvtObj := &g.EventObjects[evtObjID-1]
 
 	xOffset := (x*32 + h*16) - mkf.INT(pEvtObj.X)
 	yOffset := (y*16 + h*8) - mkf.INT(pEvtObj.Y)
@@ -1397,31 +1397,31 @@ func npcWalkTo(evtObjID mkf.WORD, x, y, h, speed mkf.INT) bool {
 }
 
 func increaseHPMP(playerRole mkf.WORD, HP mkf.SHORT, MP mkf.SHORT) bool {
-	g := &globals.G
+	g := &Globals.G
 
 	if HP != 0 {
-		newHP := int(g.playerRoles.HP[playerRole]) + int(HP)
+		newHP := int(g.PlayerRoles.HP[playerRole]) + int(HP)
 		if newHP < 0 {
 			newHP = 0
 		}
-		if newHP > int(g.playerRoles.MaxHP[playerRole]) {
-			newHP = int(g.playerRoles.MaxHP[playerRole])
+		if newHP > int(g.PlayerRoles.MaxHP[playerRole]) {
+			newHP = int(g.PlayerRoles.MaxHP[playerRole])
 		}
-		g.playerRoles.HP[playerRole] = mkf.WORD(newHP)
+		g.PlayerRoles.HP[playerRole] = mkf.WORD(newHP)
 	}
 
 	if MP != 0 {
-		newMP := int(g.playerRoles.MP[playerRole]) + int(MP)
+		newMP := int(g.PlayerRoles.MP[playerRole]) + int(MP)
 		if newMP < 0 {
 			newMP = 0
 		}
-		if newMP > int(g.playerRoles.MaxMP[playerRole]) {
-			newMP = int(g.playerRoles.MaxMP[playerRole])
+		if newMP > int(g.PlayerRoles.MaxMP[playerRole]) {
+			newMP = int(g.PlayerRoles.MaxMP[playerRole])
 		}
-		g.playerRoles.MP[playerRole] = mkf.WORD(newMP)
+		g.PlayerRoles.MP[playerRole] = mkf.WORD(newMP)
 	}
 
-	return g.playerRoles.HP[playerRole] > 0
+	return g.PlayerRoles.HP[playerRole] > 0
 }
 
 func getItemIndexToInventory(objectID mkf.WORD) (mkf.INT, bool) {
@@ -1430,10 +1430,10 @@ func getItemIndexToInventory(objectID mkf.WORD) (mkf.INT, bool) {
 	var index mkf.INT = 0
 
 	for index < MAX_INVENTORY {
-		if globals.G.inventory[index].Item == objectID {
+		if Globals.G.Inventory[index].Item == objectID {
 			found = true
 			break
-		} else if globals.G.inventory[index].Item == 0 {
+		} else if Globals.G.Inventory[index].Item == 0 {
 			break
 		}
 		index++
