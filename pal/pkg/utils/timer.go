@@ -1,6 +1,9 @@
 package utils
 
-import "container/heap"
+import (
+	"container/heap"
+	"sync"
+)
 
 type timerNode struct {
 	freq     int
@@ -41,6 +44,7 @@ type TimerManager struct {
 	count int
 
 	idCounter uint64
+	mu        sync.Mutex
 }
 
 func NewTimer() *TimerManager {
@@ -50,6 +54,9 @@ func NewTimer() *TimerManager {
 }
 
 func (t *TimerManager) AddOneTimeEvent(countDown int, fn func(int)) uint64 {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
 	t.idCounter++
 	heap.Push(&t.queue, timerNode{
 		deadline: t.count + countDown,
@@ -61,6 +68,9 @@ func (t *TimerManager) AddOneTimeEvent(countDown int, fn func(int)) uint64 {
 }
 
 func (t *TimerManager) AddRepeatEvent(freq int, repeat int, fn func(int)) uint64 {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
 	t.idCounter++
 	heap.Push(&t.queue, timerNode{
 		deadline: t.count + freq,
@@ -73,6 +83,9 @@ func (t *TimerManager) AddRepeatEvent(freq int, repeat int, fn func(int)) uint64
 }
 
 func (t *TimerManager) RepeatUntil(freq int, fn func(int), until func() bool) uint64 {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
 	t.idCounter++
 	heap.Push(&t.queue, timerNode{
 		deadline: t.count + freq,
@@ -85,27 +98,40 @@ func (t *TimerManager) RepeatUntil(freq int, fn func(int), until func() bool) ui
 }
 
 func (t *TimerManager) RemoveEvent(id uint64) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
 	var i int
 	for i = range t.queue {
 		if t.queue[i].id == id {
 			break
 		}
 	}
-	heap.Remove(&t.queue, i)
+	if len(t.queue) > 0 {
+		heap.Remove(&t.queue, i)
+	}
 }
 
 func (t *TimerManager) Update() {
-	for t.queue.Len() > 0 && t.queue[0].deadline <= t.count {
-		head := t.queue[0]
-		head.repeat--
-		head.callback(head.repeat)
-		heap.Pop(&t.queue)
-
-		if head.until != nil && !head.until() ||
-			head.repeat > 0 {
-			head.deadline += head.freq
-			heap.Push(&t.queue, head)
-		}
-	}
+	t.mu.Lock()
 	t.count++
+
+	var tasksToExecute []timerNode
+	for t.queue.Len() > 0 && t.queue[0].deadline <= t.count {
+		head := heap.Pop(&t.queue).(timerNode)
+		head.repeat--
+		tasksToExecute = append(tasksToExecute, head)
+	}
+	t.mu.Unlock()
+
+	for _, task := range tasksToExecute {
+		task.callback(task.repeat)
+
+		t.mu.Lock()
+		if task.until != nil && !task.until() || task.repeat > 0 {
+			task.deadline += task.freq
+			heap.Push(&t.queue, task)
+		}
+		t.mu.Unlock()
+	}
 }
