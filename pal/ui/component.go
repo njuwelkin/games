@@ -1,7 +1,7 @@
 package ui
 
 var (
-	globalConponetID int = 0
+	globalComponentID int = 0
 	//defaultTimer     *utils.TimerManager = utils.NewTimer()
 )
 
@@ -11,12 +11,12 @@ type BasicComponent struct {
 	parent ParentCom
 }
 
-func NewConponent(t, l, h, w int, parent ParentCom) *BasicComponent {
+func NewComponent(t, l, h, w int, parent ParentCom) *BasicComponent {
 	ret := BasicComponent{}
 	ret.RECT = Rect{t, l, h, w}
-	ret.id = globalConponetID
+	ret.id = globalComponentID
 	ret.parent = parent
-	globalConponetID++
+	globalComponentID++
 	return &ret
 }
 

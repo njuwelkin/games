@@ -26,7 +26,7 @@ type BasicWindow struct {
 
 func NewBasicWindow(parent ParentCom) *BasicWindow {
 	ret := BasicWindow{
-		BasicComponent: *NewConponent(0, 0, 0, 0, parent),
+		BasicComponent: *NewComponent(0, 0, 0, 0, parent),
 	}
 	//ret.id = winIDCounter
 	//ret.parent = parent
@@ -134,7 +134,7 @@ func (bw *BasicWindow) FadeOut(timeInTick int) {
 
 func (bw *BasicWindow) Draw(screen *ebiten.Image) {
 	for _, com := range bw.components {
-		bw.drawCompoent(screen, com)
+		bw.drawComponent(screen, com)
 	}
 }
 
@@ -151,7 +151,8 @@ func (bw *BasicWindow) Notify(subId int, event ComEvent, msg any) {
 	case OnWinClose:
 		bw.removeComponentByID(subId)
 	default:
-		panic("unknown event")
+		//panic("unknown event")
+		print(event)
 	}
 }
 
@@ -159,7 +160,7 @@ func (bw *BasicWindow) Timer() *utils.TimerManager {
 	return bw.timer
 }
 
-func (bw *BasicWindow) drawCompoent(screen *ebiten.Image, com Component) {
+func (bw *BasicWindow) drawComponent(screen *ebiten.Image, com Component) {
 	rect := com.Rect()
 	sw, sh := com.Layout(rect.Width, rect.Height)
 	if sw == 0 || sh == 0 {

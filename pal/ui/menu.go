@@ -32,7 +32,7 @@ type Menu struct {
 
 func NewMenu(t, l, h, w int, p ParentCom, face font.Face, canClose bool) *Menu {
 	ret := Menu{
-		BasicComponent: *NewConponent(t, l, h, w, p),
+		BasicComponent: *NewComponent(t, l, h, w, p),
 		items:          []MenuItem{},
 		active:         true,
 		interval:       20,

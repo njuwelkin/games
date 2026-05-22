@@ -78,7 +78,7 @@ func (om *openingMenu) Update() error {
 func (om *openingMenu) Draw(screen *ebiten.Image) {
 	screen.DrawImage(om.backGround.ToImageWithPalette(om.GetPalette()), nil)
 	om.BasicWindow.Draw(screen)
-	//ui.NewLabel(globalSetting.Text.WordBuf[8], globalSetting.Font.NormalFont).Draw(screen, true)
+	//ui.NewLabel(globals.Text.WordBuf[8], globals.Font.NormalFont).Draw(screen, 0, 0, false, color.White)
 }
 
 func (om *openingMenu) Layout(outsideWidth, outsideHeight int) (int, int) {

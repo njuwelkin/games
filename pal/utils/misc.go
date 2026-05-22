@@ -17,3 +17,10 @@ func WordArray(p unsafe.Pointer, size uintptr) []mkf.WORD {
 	sh.Cap = int(l)
 	return ret
 }
+
+func Min(x, y int) int {
+	if x < y {
+		return x
+	}
+	return y
+}

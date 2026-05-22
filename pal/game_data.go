@@ -26,6 +26,7 @@ type gameData struct {
 	enemyPos          mkf.EnemyPos
 	levelUpExp        [mkf.MAX_LEVELS + 1]mkf.WORD
 	battleEffectIndex [10][2]mkf.WORD
+	avatars           []*mkf.BitMap
 
 	// dynamic data
 	crtSceneNum   mkf.WORD // sdlpal-1
@@ -158,8 +159,36 @@ func loadGameData() gameData {
 	}
 	ret.levelUpExp = levelUpExp
 
+	// load from rgm.mkf (character face bitmaps)
+	ret.loadAvatar()
+
 	ret.loadDefault()
 	return ret
+}
+
+func (gd *gameData) loadAvatar() {
+	rgm, err := mkf.NewRgmMkf("RGM.MKF")
+	if err != nil {
+		panic(err.Error())
+	}
+	defer func() {
+		rgm.Close()
+	}()
+
+	size, err := rgm.GetChunkCount()
+	if err != nil {
+		panic(err.Error())
+	}
+	// 加载所有脸部位图（预设最大200个）
+	gd.avatars = make([]*mkf.BitMap, size)
+	for i := 0; i < int(size); i++ {
+		bmp, err := rgm.GetFaceBmp(mkf.INT(i))
+		if err != nil || bmp == nil {
+			gd.avatars[i] = nil
+			continue
+		}
+		gd.avatars[i] = bmp
+	}
 }
 
 func (gd *gameData) loadDefault() {

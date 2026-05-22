@@ -9,6 +9,7 @@ type ComEvent int
 
 const (
 	OnWinClose ComEvent = iota
+	WaitForKey
 )
 
 type ParentCom interface {
@@ -18,6 +19,7 @@ type ParentCom interface {
 
 type Window interface {
 	Component
+	AddComponent(c Component)
 	Close(msg any)
 }
 
