@@ -1,11 +1,12 @@
 package ui
 
 import (
-	"image/color"
+	"image"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"golang.org/x/image/font"
+	"golang.org/x/image/math/fixed"
 )
 
 type DialogType int
@@ -24,11 +25,14 @@ const (
 type Dialog struct {
 	BasicComponent
 
-	dialogType DialogType
-	avatarImg  *ebiten.Image
+	avatarImg      *ebiten.Image
+	avatarPosition Pos
 
-	lines [][]rune
-	face  font.Face
+	lines        [][]rune
+	face         font.Face
+	namePosition Pos
+	textPosition Pos
+	lineSpacing  int
 
 	currentPage     int
 	maxLinesPerPage int
@@ -48,36 +52,57 @@ func NewDialog(position DialogType, parent ParentCom, avatar *ebiten.Image, face
 }
 
 func NewDialogUpper(parent ParentCom, avatar *ebiten.Image, face font.Face) *Dialog {
+	// DialogUpper: 头像绘制在最左侧
+	avatarPos := Pos{X: 0, Y: 0}
+
 	return &Dialog{
 		BasicComponent:  *NewComponent(5, 5, dialogHeight, dialogWidth, parent),
-		dialogType:      DialogUpper,
 		avatarImg:       avatar,
-		lines:           [][]rune{{}, {}},
+		avatarPosition:  avatarPos,
+		lines:           [][]rune{},
 		face:            face,
+		namePosition:    Pos{X: 10, Y: 20},
+		textPosition:    Pos{X: 10, Y: 50},
+		lineSpacing:     20,
 		currentPage:     0,
 		maxLinesPerPage: 3,
 	}
 }
 
 func NewDialogLower(parent ParentCom, avatar *ebiten.Image, face font.Face) *Dialog {
+	// DialogLower: 头像绘制在最右侧
+	avatarPos := Pos{X: 0, Y: 0}
+	if avatar != nil {
+		avatarWidth := avatar.Bounds().Dx()
+		avatarPos = Pos{X: dialogWidth - avatarWidth - 1, Y: 0}
+	}
+
 	return &Dialog{
-		BasicComponent:  *NewComponent(100, 5, dialogHeight, dialogWidth, parent),
-		dialogType:      DialogLower,
+		BasicComponent:  *NewComponent(5, 150, dialogHeight, dialogWidth, parent),
 		avatarImg:       avatar,
-		lines:           [][]rune{{}, {}},
+		avatarPosition:  avatarPos,
+		lines:           [][]rune{},
 		face:            face,
+		namePosition:    Pos{X: 10, Y: 20},
+		textPosition:    Pos{X: 10, Y: 50},
+		lineSpacing:     20,
 		currentPage:     0,
 		maxLinesPerPage: 3,
 	}
 }
 
 func NewDialogCenter(parent ParentCom, avatar *ebiten.Image, face font.Face) *Dialog {
+	avatarPos := Pos{X: 0, Y: 0}
+
 	return &Dialog{
 		BasicComponent:  *NewComponent(150, 5, dialogHeight, dialogWidth, parent),
-		dialogType:      DialogCenter,
 		avatarImg:       avatar,
-		lines:           [][]rune{{}, {}},
+		avatarPosition:  avatarPos,
+		lines:           [][]rune{},
 		face:            face,
+		namePosition:    Pos{X: 10, Y: 20},
+		textPosition:    Pos{X: 10, Y: 50},
+		lineSpacing:     20,
 		currentPage:     0,
 		maxLinesPerPage: 3,
 	}
@@ -113,30 +138,30 @@ func (dialog *Dialog) Draw(screen *ebiten.Image) {
 
 	if dialog.avatarImg != nil {
 		op := &ebiten.DrawImageOptions{}
-
-		if dialog.dialogType == DialogLower {
-			// DialogLower: 头像绘制在最右侧
-			avatarWidth := dialog.avatarImg.Bounds().Dx()
-			op.GeoM.Translate(float64(dialogWidth-avatarWidth-1), 0)
-		} else {
-			// DialogUpper: 头像绘制在最左侧
-			op.GeoM.Translate(0, 0)
-		}
+		op.GeoM.Translate(float64(dialog.avatarPosition.X), float64(dialog.avatarPosition.Y))
 		screen.DrawImage(dialog.avatarImg, op)
 	}
 
 	if len(dialog.lines) > 0 && len(dialog.lines[0]) > 0 {
-		nameLabel := NewLabel(dialog.lines[0], dialog.face)
-
-		if dialog.dialogType == DialogLower {
-			nameLabel.Draw(screen, 0, 0, true, color.Gray{Y: 125})
-		} else {
-			avatarWidth := 0
-			if dialog.avatarImg != nil {
-				avatarWidth = dialog.avatarImg.Bounds().Dx()
-			}
-			nameLabel.Draw(screen, avatarWidth+10, 0, true, color.Gray{Y: 125})
+		d := &font.Drawer{
+			Dst:  screen,
+			Src:  image.White,
+			Face: dialog.face,
+			Dot:  fixed.P(dialog.namePosition.X, dialog.namePosition.Y),
 		}
+		d.DrawString(string(dialog.lines[0]))
+	}
+
+	startLine := dialog.currentPage * dialog.maxLinesPerPage
+	for i := startLine; i < startLine+dialog.maxLinesPerPage && i < len(dialog.lines); i++ {
+		lineIdx := i - startLine
+		d := &font.Drawer{
+			Dst:  screen,
+			Src:  image.White,
+			Face: dialog.face,
+			Dot:  fixed.P(dialog.textPosition.X, dialog.textPosition.Y+lineIdx*dialog.lineSpacing),
+		}
+		d.DrawString(string(dialog.lines[i]))
 	}
 }
 
