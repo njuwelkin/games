@@ -24,7 +24,7 @@ type Resource struct {
 
 }
 
-func initGlobalSetting() {
+func InitGlobalSetting() {
 	Globals.Config = loadConfig()
 	Globals.Text = loadText()
 	Globals.Font = newFont()

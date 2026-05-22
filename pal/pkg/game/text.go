@@ -1,7 +1,6 @@
 package game
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"unsafe"
@@ -109,7 +108,6 @@ type TextLib struct {
 
 func loadText() TextLib {
 	ret := TextLib{}
-
 	temp, err := os.ReadFile(filepath.Join(Globals.Config.GamePath, "WORD.DAT"))
 	if err != nil {
 		panic("")
@@ -165,10 +163,10 @@ func loadText() TextLib {
 			wcs[len(wcs)-1] = 0
 		}
 		wcs = append(wcs, 0)
-		fmt.Println(i, string(wcs))
+		//fmt.Println(i, string(wcs))
 		ret.MsgBuf = append(ret.MsgBuf, wcs)
 	}
-	fmt.Println(string([]rune{0x8FD4, 0x56DE, 0x8A2D, 0x5B9A}))
+	//fmt.Println(string([]rune{0x8FD4, 0x56DE, 0x8A2D, 0x5B9A}))
 
 	ret.FontFlavor = kFontFlavorAuto
 	ret.Icon = 0

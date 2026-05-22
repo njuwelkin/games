@@ -9,47 +9,54 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
+	"github.com/njuwelkin/games/pal/pkg/game"
 	"github.com/njuwelkin/games/pal/pkg/mkf"
 )
 
 type Game struct {
-	rgm          *mkf.RgmMkf
 	currentIndex int
 	totalFaces   int
 	currentImage *ebiten.Image
 	palette      []color.RGBA
 }
 
-func NewGame(rgmPath string, gamePath string) (*Game, error) {
-	rgm, err := mkf.NewRgmMkf(rgmPath)
-	if err != nil {
-		rgm, err = mkf.NewRgmMkf("../../RGM.MKF")
-	}
-	if err != nil {
-		return nil, err
+func NewGame(gamePath string) (*Game, error) {
+	// 设置游戏路径配置
+	game.Globals.Config = game.Config{
+		GamePath:   gamePath,
+		SavePath:   "./",
+		ShaderPath: "./",
+		WordLength: 10,
 	}
 
+	// 初始化全局设置（包括加载游戏数据）
+	game.InitGlobalSetting()
+
 	// 获取调色板
-	palette, err := mkf.GetPalette(mkf.INT(0), false, gamePath)
+	palette, err := mkf.GetPalette(mkf.INT(0), false, game.Globals.Config.GamePath)
 	if err != nil {
 		log.Printf("Warning: Failed to load palette: %v", err)
 		return nil, err
 	}
 
-	game := &Game{
-		rgm:          &rgm,
-		currentIndex: 0,
-		totalFaces:   200, // 预设最大脸数
-		palette:      palette,
-	}
+	// 获取头像数量
+	totalFaces := len(game.Globals.G.Avatars)
 
-	game.loadCurrentFace()
-	return game, nil
+	return &Game{
+		currentIndex: 0,
+		totalFaces:   totalFaces,
+		palette:      palette,
+	}, nil
 }
 
 func (g *Game) loadCurrentFace() {
-	bmp, err := g.rgm.GetFaceBmp(mkf.INT(g.currentIndex))
-	if err != nil || bmp == nil {
+	if g.currentIndex < 0 || g.currentIndex >= g.totalFaces {
+		g.currentImage = nil
+		return
+	}
+
+	bmp := game.Globals.G.Avatars[g.currentIndex]
+	if bmp == nil {
 		g.currentImage = nil
 		return
 	}
@@ -105,14 +112,16 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
 }
 
 func main() {
-	rgmPath := flag.String("f", "RGM.MKF", "Path to RGM.MKF file")
-	gamePath := flag.String("g", "./", "Path to game data directory")
+	gamePath := flag.String("g", "./data", "Path to game data directory")
 	flag.Parse()
 
-	game, err := NewGame(*rgmPath, *gamePath)
+	game, err := NewGame(*gamePath)
 	if err != nil {
-		log.Fatalf("Failed to load RGM.MKF: %v", err)
+		log.Fatalf("Failed to initialize game: %v", err)
 	}
+
+	// 加载第一张脸
+	game.loadCurrentFace()
 
 	ebiten.SetWindowSize(640, 480)
 	ebiten.SetWindowTitle("RGM.MKF Face Viewer")

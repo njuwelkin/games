@@ -23,7 +23,7 @@ type Game struct {
 }
 
 func NewGame() (*Game, error) {
-	initGlobalSetting()
+	InitGlobalSetting()
 	ret := Game{}
 	ret.input = &ui.DefaultInput
 	ss := newSplashScreen(&ret)
