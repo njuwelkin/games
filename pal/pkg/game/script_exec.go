@@ -191,7 +191,7 @@ func (se *ScriptExecutor) executeStep() bool {
 			numCharFace := pScript.Operand[0]
 			playingRNG := pScript.Operand[2] != 0
 			_, _, _ = fontColor, numCharFace, playingRNG
-			dialog := se.createDialog(fontColor, numCharFace, playingRNG)
+			dialog := se.createDialog(ui.DialogCenter, fontColor, numCharFace, playingRNG)
 			se.owner.AddComponent(dialog)
 			se.dialog = dialog
 			se.scriptEntry++
@@ -206,7 +206,7 @@ func (se *ScriptExecutor) executeStep() bool {
 			numCharFace := pScript.Operand[0]
 			playingRNG := pScript.Operand[2] != 0
 			_, _, _ = fontColor, numCharFace, playingRNG
-			dialog := se.createDialog(fontColor, numCharFace, playingRNG)
+			dialog := se.createDialog(ui.DialogUpper, fontColor, numCharFace, playingRNG)
 			se.owner.AddComponent(dialog)
 			se.dialog = dialog
 			se.scriptEntry++
@@ -221,7 +221,7 @@ func (se *ScriptExecutor) executeStep() bool {
 			numCharFace := pScript.Operand[0]
 			playingRNG := pScript.Operand[2] != 0
 			_, _, _ = fontColor, numCharFace, playingRNG
-			dialog := se.createDialog(fontColor, numCharFace, playingRNG)
+			dialog := se.createDialog(ui.DialogLower, fontColor, numCharFace, playingRNG)
 			se.owner.AddComponent(dialog)
 			se.dialog = dialog
 			se.scriptEntry++
@@ -231,7 +231,7 @@ func (se *ScriptExecutor) executeStep() bool {
 			//
 			/*
 				PAL_ClearDialog(TRUE);
-				PAL_StartDialog(kDialogCenterWindow, (BYTE)pScript->rgwOperand[0], 0, FALSE);
+				PAL_StartDialog(ui.DialogCenter, (BYTE)pScript->rgwOperand[0], 0, FALSE);
 			*/
 			se.scriptEntry++
 		case 0xFFFF:
@@ -260,7 +260,7 @@ func (se *ScriptExecutor) executeStep() bool {
 	return se.ended
 }
 
-func (se *ScriptExecutor) createDialog(fontColor, numCharFace mkf.WORD, playingRNG bool) *ui.Dialog {
+func (se *ScriptExecutor) createDialog(position ui.DialogType, fontColor, numCharFace mkf.WORD, playingRNG bool) *ui.Dialog {
 	var avatarImg *ebiten.Image = nil
 	if numCharFace > 0 {
 		rgm, err := mkf.NewRgmMkf(filepath.Join(Globals.Config.GamePath, "RGM.MKF"))
@@ -278,9 +278,9 @@ func (se *ScriptExecutor) createDialog(fontColor, numCharFace mkf.WORD, playingR
 		}
 		avatarImg = bmp.ToImageWithPalette(plt)
 	}
-	dialog := ui.NewDialog(0, 0, 200, 300, se.owner, avatarImg, Globals.Font.NormalFont)
+	dialog := ui.NewDialog(position, se.owner, avatarImg, Globals.Font.NormalFont)
 	dialog.OnClose = func() {
 		se.dialog = nil
 	}
-	return &dialog
+	return dialog
 }
