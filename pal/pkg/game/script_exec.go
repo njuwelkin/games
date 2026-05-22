@@ -148,7 +148,9 @@ func (se *ScriptExecutor) executeStep() bool {
 		case 0x0005:
 			// 重绘屏幕 - 暂停等待屏幕更新
 			se.owner.Notify(-1, ui.WaitForKey, nil)
-			se.suspended = true
+			if se.dialog != nil {
+				se.suspended = true
+			}
 			se.scriptEntry++
 
 		case 0x0006:
@@ -182,19 +184,29 @@ func (se *ScriptExecutor) executeStep() bool {
 			//
 			// Show dialog in the middle part of the screen
 			//
-			dialog := ui.NewDialog(0, 0, 100, 300, se.owner, nil, Globals.Font.NormalFont)
-			se.owner.AddComponent(&dialog)
-			se.dialog = &dialog
+			if se.dialog != nil {
+				//se.owner.RemoveComponent(se.dialog)
+			}
+			fontColor := pScript.Operand[1]
+			numCharFace := pScript.Operand[0]
+			playingRNG := pScript.Operand[2] != 0
+			_, _, _ = fontColor, numCharFace, playingRNG
+			dialog := se.createDialog(fontColor, numCharFace, playingRNG)
+			se.owner.AddComponent(dialog)
+			se.dialog = dialog
 			se.scriptEntry++
 		case 0x003C:
 			//
 			// Show dialog in the upper part of the screen
 			//
+			if se.dialog != nil {
+				//se.owner.RemoveComponent(se.dialog)
+			}
 			fontColor := pScript.Operand[1]
 			numCharFace := pScript.Operand[0]
 			playingRNG := pScript.Operand[2] != 0
 			_, _, _ = fontColor, numCharFace, playingRNG
-			dialog := createDialog(se.owner, fontColor, numCharFace, playingRNG)
+			dialog := se.createDialog(fontColor, numCharFace, playingRNG)
 			se.owner.AddComponent(dialog)
 			se.dialog = dialog
 			se.scriptEntry++
@@ -202,9 +214,16 @@ func (se *ScriptExecutor) executeStep() bool {
 			//
 			// Show dialog in the lower part of the screen
 			//
-			dialog := ui.NewDialog(0, 0, 200, 300, se.owner, nil, Globals.Font.NormalFont)
-			se.owner.AddComponent(&dialog)
-			se.dialog = &dialog
+			if se.dialog != nil {
+				//se.owner.RemoveComponent(se.dialog)
+			}
+			fontColor := pScript.Operand[1]
+			numCharFace := pScript.Operand[0]
+			playingRNG := pScript.Operand[2] != 0
+			_, _, _ = fontColor, numCharFace, playingRNG
+			dialog := se.createDialog(fontColor, numCharFace, playingRNG)
+			se.owner.AddComponent(dialog)
+			se.dialog = dialog
 			se.scriptEntry++
 		case 0x003E:
 			//
@@ -241,7 +260,7 @@ func (se *ScriptExecutor) executeStep() bool {
 	return se.ended
 }
 
-func createDialog(owner ui.ParentCom, fontColor, numCharFace mkf.WORD, playingRNG bool) *ui.Dialog {
+func (se *ScriptExecutor) createDialog(fontColor, numCharFace mkf.WORD, playingRNG bool) *ui.Dialog {
 	var avatarImg *ebiten.Image = nil
 	if numCharFace > 0 {
 		rgm, err := mkf.NewRgmMkf(filepath.Join(Globals.Config.GamePath, "RGM.MKF"))
@@ -259,7 +278,9 @@ func createDialog(owner ui.ParentCom, fontColor, numCharFace mkf.WORD, playingRN
 		}
 		avatarImg = bmp.ToImageWithPalette(plt)
 	}
-	dialog := ui.NewDialog(0, 0, 200, 300, owner, avatarImg, Globals.Font.NormalFont)
-
+	dialog := ui.NewDialog(0, 0, 200, 300, se.owner, avatarImg, Globals.Font.NormalFont)
+	dialog.OnClose = func() {
+		se.dialog = nil
+	}
 	return &dialog
 }

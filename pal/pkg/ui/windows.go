@@ -143,7 +143,18 @@ func (bw *BasicWindow) AddComponent(c Component) {
 }
 
 func (bw *BasicWindow) RemoveComponent(c Component) {
+	if c == nil {
+		return
+	}
 	bw.removeComponentByID(c.ID())
+}
+
+func (bw *BasicWindow) RemoveAllComponents() {
+	bw.components = []Component{}
+}
+
+func (bw *BasicWindow) CountComponents() int {
+	return len(bw.components)
 }
 
 func (bw *BasicWindow) Notify(subId int, event ComEvent, msg any) {

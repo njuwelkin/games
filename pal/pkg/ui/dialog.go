@@ -4,6 +4,7 @@ import (
 	"image/color"
 
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"golang.org/x/image/font"
 )
 
@@ -41,9 +42,18 @@ func (dialog *Dialog) AppendLine(line []rune) *Dialog {
 }
 
 func (dialog *Dialog) Update() error {
-	// when key pressed, if not completed show, page up. otherwise, close dialog
-	if dialog.currentPage < len(dialog.lines)/dialog.maxLinesPerPage {
-		dialog.currentPage++
+	// 检测空格键或回车键按下
+	if inpututil.IsKeyJustPressed(ebiten.KeySpace) || inpututil.IsKeyJustPressed(ebiten.KeyEnter) {
+		// 计算总页数
+		totalPages := (len(dialog.lines) + dialog.maxLinesPerPage - 1) / dialog.maxLinesPerPage
+
+		if dialog.currentPage < totalPages-1 {
+			// 不是最后一页，翻页
+			dialog.currentPage++
+		} else {
+			// 是最后一页，关闭对话框
+			dialog.Close(nil)
+		}
 	}
 	return nil
 }

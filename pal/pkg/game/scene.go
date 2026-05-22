@@ -109,6 +109,10 @@ func (s *sceneScreen) Layout(outsideWidth, outsideHeight int) (int, int) {
 }
 
 func (s *sceneScreen) handleInput() {
+	// if any component is shown, then ignore input
+	if s.BasicWindow.CountComponents() > 0 {
+		return
+	}
 	// if any key pressed, then continue script
 	if s.waitForKey && s.input.Pressed(ui.KeyAny) {
 		s.waitForKey = false

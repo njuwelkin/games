@@ -9,6 +9,8 @@ type BasicComponent struct {
 	id     int
 	RECT   Rect
 	parent ParentCom
+
+	OnClose func()
 }
 
 func NewComponent(t, l, h, w int, parent ParentCom) *BasicComponent {
@@ -41,6 +43,9 @@ func (bc *BasicComponent) Layout(outsideWidth, outsideHeight int) (screenWidth, 
 }
 
 func (bc *BasicComponent) Close(msg any) {
+	if bc.OnClose != nil {
+		bc.OnClose()
+	}
 	bc.parent.Notify(bc.ID(), OnWinClose, msg)
 }
 
