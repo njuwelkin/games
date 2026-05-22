@@ -25,8 +25,8 @@ type Resource struct {
 }
 
 func initGlobalSetting() {
-	Globals.Text = loadText()
 	Globals.Config = loadConfig()
+	Globals.Text = loadText()
 	Globals.Font = newFont()
 	Globals.G = LoadGameData()
 	Globals.UpdatedInBattle = false

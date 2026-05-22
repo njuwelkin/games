@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"image/color"
+	"path/filepath"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/njuwelkin/games/pal/mkf"
@@ -52,7 +53,7 @@ func LoadMap(mapNum mkf.INT) (Map, error) {
 	ret := Map{}
 
 	mapMkf := mkf.Mkf{}
-	err := mapMkf.Open("./MAP.MKF")
+	err := mapMkf.Open(filepath.Join(Globals.Config.GamePath, "./MAP.MKF"))
 	if err != nil {
 		return ret, err
 	}
@@ -61,7 +62,7 @@ func LoadMap(mapNum mkf.INT) (Map, error) {
 	}()
 
 	gopMkf := mkf.Mkf{}
-	err = gopMkf.Open("./GOP.MKF")
+	err = gopMkf.Open(filepath.Join(Globals.Config.GamePath, "./GOP.MKF"))
 	if err != nil {
 		return ret, err
 	}

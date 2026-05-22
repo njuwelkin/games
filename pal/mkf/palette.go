@@ -3,6 +3,7 @@ package mkf
 import (
 	"fmt"
 	"image/color"
+	"path/filepath"
 )
 
 type PaletteChunk struct {
@@ -36,11 +37,11 @@ func (pc *PaletteChunk) GetPalette(night bool) ([]color.RGBA, error) {
 	return ret, nil
 }
 
-func GetPalette(paletteNum INT, night bool) ([]color.RGBA, error) {
+func GetPalette(paletteNum INT, night bool, gamePath string) ([]color.RGBA, error) {
 	palette := []color.RGBA{}
 
 	res := Mkf{}
-	err := res.Open("./PAT.MKF")
+	err := res.Open(filepath.Join(gamePath, "./PAT.MKF"))
 	if err != nil {
 		return palette, err
 	}
@@ -55,5 +56,5 @@ func GetPalette(paletteNum INT, night bool) ([]color.RGBA, error) {
 	}
 	pltTrunk := NewPaletteChunk(buf)
 
-	return pltTrunk.GetPalette(false)
+	return pltTrunk.GetPalette(night)
 }

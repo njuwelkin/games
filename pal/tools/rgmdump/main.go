@@ -20,7 +20,7 @@ type Game struct {
 	palette      []color.RGBA
 }
 
-func NewGame(rgmPath string) (*Game, error) {
+func NewGame(rgmPath string, gamePath string) (*Game, error) {
 	rgm, err := mkf.NewRgmMkf(rgmPath)
 	if err != nil {
 		rgm, err = mkf.NewRgmMkf("../../RGM.MKF")
@@ -30,7 +30,7 @@ func NewGame(rgmPath string) (*Game, error) {
 	}
 
 	// 获取调色板
-	palette, err := mkf.GetPalette(mkf.INT(0), false)
+	palette, err := mkf.GetPalette(mkf.INT(0), false, gamePath)
 	if err != nil {
 		log.Printf("Warning: Failed to load palette: %v", err)
 		return nil, err
@@ -106,9 +106,10 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
 
 func main() {
 	rgmPath := flag.String("f", "RGM.MKF", "Path to RGM.MKF file")
+	gamePath := flag.String("g", "./", "Path to game data directory")
 	flag.Parse()
 
-	game, err := NewGame(*rgmPath)
+	game, err := NewGame(*rgmPath, *gamePath)
 	if err != nil {
 		log.Fatalf("Failed to load RGM.MKF: %v", err)
 	}

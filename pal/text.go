@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"unsafe"
 
 	"github.com/njuwelkin/games/pal/mkf"
@@ -109,7 +110,7 @@ type TextLib struct {
 func loadText() TextLib {
 	ret := TextLib{}
 
-	temp, err := os.ReadFile("WORD.DAT")
+	temp, err := os.ReadFile(filepath.Join(Globals.Config.GamePath, "WORD.DAT"))
 	if err != nil {
 		panic("")
 	}
@@ -134,7 +135,7 @@ func loadText() TextLib {
 		ret.WordBuf = append(ret.WordBuf, wcs)
 	}
 
-	sssMkf, err := mkf.NewSSSMkf("SSS.MKF")
+	sssMkf, err := mkf.NewSSSMkf(filepath.Join(Globals.Config.GamePath, "SSS.MKF"))
 	if err != nil {
 		panic("")
 	}
@@ -152,7 +153,7 @@ func loadText() TextLib {
 	if err != nil {
 		panic("")
 	}
-	temp, err = os.ReadFile("M.MSG")
+	temp, err = os.ReadFile(filepath.Join(Globals.Config.GamePath, "M.MSG"))
 	if err != nil {
 		panic("")
 	}
@@ -178,7 +179,7 @@ func loadText() TextLib {
 	ret.PosDialogText = Pos{44, 26}
 	ret.DialogPosition = kDialogUpper
 
-	dataMkf, err := mkf.NewDataMkf("DATA.MKF")
+	dataMkf, err := mkf.NewDataMkf(filepath.Join(Globals.Config.GamePath, "DATA.MKF"))
 	if err != nil {
 		panic("")
 	}

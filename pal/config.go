@@ -11,7 +11,7 @@ type Config struct {
 
 func loadConfig() Config {
 	return Config{
-		GamePath:   "./",
+		GamePath:   "./data",
 		SavePath:   "./",
 		ShaderPath: "./",
 		WordLength: 10,

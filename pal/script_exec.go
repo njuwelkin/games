@@ -2,6 +2,7 @@ package main
 
 import (
 	"math/rand"
+	"path/filepath"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/njuwelkin/games/pal/mkf"
@@ -243,7 +244,7 @@ func (se *ScriptExecutor) executeStep() bool {
 func createDialog(owner ui.ParentCom, fontColor, numCharFace mkf.WORD, playingRNG bool) *ui.Dialog {
 	var avatarImg *ebiten.Image = nil
 	if numCharFace > 0 {
-		rgm, err := mkf.NewRgmMkf("RGM.MKF")
+		rgm, err := mkf.NewRgmMkf(filepath.Join(Globals.Config.GamePath, "RGM.MKF"))
 		if err != nil {
 			panic(err.Error())
 		}
@@ -252,7 +253,7 @@ func createDialog(owner ui.ParentCom, fontColor, numCharFace mkf.WORD, playingRN
 		if err != nil || bmp == nil {
 			panic(err.Error())
 		}
-		plt, err := mkf.GetPalette(mkf.INT(Globals.G.CrtPaletteNum), false)
+		plt, err := mkf.GetPalette(mkf.INT(Globals.G.CrtPaletteNum), false, Globals.Config.GamePath)
 		if err != nil {
 			panic(err.Error())
 		}

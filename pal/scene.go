@@ -1,6 +1,8 @@
 package main
 
 import (
+	"path/filepath"
+
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/njuwelkin/games/pal/mkf"
 	"github.com/njuwelkin/games/pal/ui"
@@ -58,7 +60,7 @@ func newSceneScreen(parent ui.ParentCom, sceneNum mkf.WORD) *sceneScreen {
 	ret.playerSprites = loadPlayerSprites()
 
 	// load palette
-	plt, err := mkf.GetPalette(mkf.INT(Globals.G.CrtPaletteNum), false)
+	plt, err := mkf.GetPalette(mkf.INT(Globals.G.CrtPaletteNum), false, Globals.Config.GamePath)
 	if err != nil {
 		panic(err.Error())
 	}
@@ -299,7 +301,7 @@ func (s *sceneScreen) Notify(subId int, event ui.ComEvent, msg any) {
 func loadEventObjectSprites(idx, count mkf.WORD) [][]*mkf.BitMap {
 	ret := make([][]*mkf.BitMap, count)
 
-	mgo, err := mkf.NewMgoMkf("MGO.MKF")
+	mgo, err := mkf.NewMgoMkf(filepath.Join(Globals.Config.GamePath, "MGO.MKF"))
 	if err != nil {
 		panic(err.Error())
 	}
@@ -342,7 +344,7 @@ func loadEventObjectSprites(idx, count mkf.WORD) [][]*mkf.BitMap {
 func loadPlayerSprites() [][]*mkf.BitMap {
 	ret := make([][]*mkf.BitMap, mkf.MAX_PLAYABLE_PLAYER_ROLES)
 
-	mgo, err := mkf.NewMgoMkf("MGO.MKF")
+	mgo, err := mkf.NewMgoMkf(filepath.Join(Globals.Config.GamePath, "MGO.MKF"))
 	if err != nil {
 		panic(err.Error())
 	}

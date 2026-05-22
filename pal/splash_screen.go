@@ -2,6 +2,7 @@ package main
 
 import (
 	"image"
+	"path/filepath"
 	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -38,14 +39,14 @@ func newSplashScreen(parent ui.ParentCom) *splashScreen {
 
 	ret.BasicWindow = ui.NewBasicWindow(parent)
 
-	palette, err := mkf.GetPalette(1, false)
+	palette, err := mkf.GetPalette(1, false, Globals.Config.GamePath)
 	if err != nil {
 		panic("")
 	}
 	ret.SetPalette(palette)
 
 	fbp := mkf.FbpMkf{}
-	err = fbp.Open("./FBP.MKF")
+	err = fbp.Open(filepath.Join(Globals.Config.GamePath, "./FBP.MKF"))
 	if err != nil {
 		panic("")
 	}
@@ -60,7 +61,7 @@ func newSplashScreen(parent ui.ParentCom) *splashScreen {
 	ret.bmpSplashDown = splashDown
 	//ret.imgSplashDown = splashDown.ToImageWithPalette(palette)
 
-	mgo, err := mkf.NewMgoMkf("./MGO.MKF")
+	mgo, err := mkf.NewMgoMkf(filepath.Join(Globals.Config.GamePath, "MGO.MKF"))
 	if err != nil {
 		panic("")
 	}

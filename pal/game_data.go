@@ -1,6 +1,8 @@
 package main
 
 import (
+	"path/filepath"
+
 	"github.com/njuwelkin/games/pal/mkf"
 )
 
@@ -55,7 +57,7 @@ func LoadGameData() GameData {
 	ret := GameData{}
 
 	// load from sss.mkf
-	sss, err := mkf.NewSSSMkf("SSS.MKF")
+	sss, err := mkf.NewSSSMkf(filepath.Join(Globals.Config.GamePath, "SSS.MKF"))
 	if err != nil {
 		panic(err.Error())
 	}
@@ -73,7 +75,7 @@ func LoadGameData() GameData {
 	}
 
 	// load from data.mkf
-	data, err := mkf.NewDataMkf("DATA.MKF")
+	data, err := mkf.NewDataMkf(filepath.Join(Globals.Config.GamePath, "DATA.MKF"))
 	if err != nil {
 		panic(err.Error())
 	}
@@ -167,7 +169,7 @@ func LoadGameData() GameData {
 }
 
 func (gd *GameData) LoadAvatar() {
-	rgm, err := mkf.NewRgmMkf("RGM.MKF")
+	rgm, err := mkf.NewRgmMkf(filepath.Join(Globals.Config.GamePath, "RGM.MKF"))
 	if err != nil {
 		panic(err.Error())
 	}
@@ -193,7 +195,7 @@ func (gd *GameData) LoadAvatar() {
 
 func (gd *GameData) LoadDefault() {
 	// load from sss.mkf
-	sss, err := mkf.NewSSSMkf("SSS.MKF")
+	sss, err := mkf.NewSSSMkf(filepath.Join(Globals.Config.GamePath, "SSS.MKF"))
 	if err != nil {
 		panic(err.Error())
 	}
@@ -226,7 +228,7 @@ func (gd *GameData) LoadDefault() {
 	gd.Objects = objs
 
 	// load from data.mkf
-	data, err := mkf.NewDataMkf("DATA.MKF")
+	data, err := mkf.NewDataMkf(filepath.Join(Globals.Config.GamePath, "DATA.MKF"))
 	if err != nil {
 		panic(err.Error())
 	}

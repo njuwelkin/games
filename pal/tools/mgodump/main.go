@@ -1,9 +1,11 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"image/color"
 	"log"
+	"path/filepath"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
@@ -19,17 +21,17 @@ type Game struct {
 	palette       []color.RGBA
 }
 
-func loadPlayerSprites() [][]*mkf.BitMap {
+func loadPlayerSprites(gamePath string) [][]*mkf.BitMap {
 	ret := make([][]*mkf.BitMap, mkf.MAX_PLAYABLE_PLAYER_ROLES)
 
-	mgo, err := mkf.NewMgoMkf("../../MGO.MKF")
+	mgo, err := mkf.NewMgoMkf(filepath.Join(gamePath, "MGO.MKF"))
 	if err != nil {
 		panic(err.Error())
 	}
 	defer mgo.Close()
 
 	// 加载 DATA.MKF 获取玩家角色数据
-	data, err := mkf.NewDataMkf("../../DATA.MKF")
+	data, err := mkf.NewDataMkf(filepath.Join(gamePath, "DATA.MKF"))
 	if err != nil {
 		log.Printf("Warning: Failed to load DATA.MKF: %v", err)
 		return ret
@@ -70,15 +72,15 @@ func loadPlayerSprites() [][]*mkf.BitMap {
 	return ret
 }
 
-func NewGame() *Game {
+func NewGame(gamePath string) *Game {
 	// 获取调色板
-	palette, err := mkf.GetPalette(mkf.INT(6), false)
+	palette, err := mkf.GetPalette(mkf.INT(6), false, gamePath)
 	if err != nil {
 		log.Printf("Warning: Failed to load palette: %v", err)
 	}
 
 	game := &Game{
-		playerSprites: loadPlayerSprites(),
+		playerSprites: loadPlayerSprites(gamePath),
 		currentPlayer: 0,
 		currentFrame:  0,
 		palette:       palette,
@@ -175,7 +177,10 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
 }
 
 func main() {
-	game := NewGame()
+	gamePath := flag.String("g", "./", "Path to game data directory")
+	flag.Parse()
+
+	game := NewGame(*gamePath)
 
 	ebiten.SetWindowSize(640, 480)
 	ebiten.SetWindowTitle("MGO.MKF Player Sprite Viewer")

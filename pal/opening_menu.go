@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"path/filepath"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/njuwelkin/games/pal/mkf"
@@ -20,7 +21,7 @@ func newOpeningMenu(parent ui.ParentCom) *openingMenu {
 		BasicWindow: *ui.NewBasicWindow(parent),
 	}
 
-	plt, err := mkf.GetPalette(0, false)
+	plt, err := mkf.GetPalette(0, false, Globals.Config.GamePath)
 	if err != nil {
 		panic("")
 	}
@@ -28,7 +29,7 @@ func newOpeningMenu(parent ui.ParentCom) *openingMenu {
 	ret.SetPalette(plt)
 
 	fbp := mkf.FbpMkf{}
-	err = fbp.Open("./FBP.MKF")
+	err = fbp.Open(filepath.Join(Globals.Config.GamePath, "./FBP.MKF"))
 	if err != nil {
 		panic("")
 	}
