@@ -236,7 +236,7 @@ func (se *ScriptExecutor) executeStep() bool {
 			se.scriptEntry++
 		case 0xFFFF:
 			//
-			// Show text
+			// Show dialog text
 			//
 			textNum := pScript.Operand[0]
 			text := []rune{}

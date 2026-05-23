@@ -86,7 +86,7 @@ type TextLib struct {
 	//PAL_POS         posIcon;
 	PosIcon Pos
 	//PAL_POS         posDialogTitle;
-	PosDialogTitl Pos
+	PosDialogTitle Pos
 	//PAL_POS         posDialogText;
 	PosDialogText Pos
 	//BYTE            bDialogPosition;
@@ -173,7 +173,7 @@ func loadText() TextLib {
 	ret.PosIcon = Pos{0, 0}
 	ret.CurrentDialogLine = 0
 	ret.DelayTime = 3
-	ret.PosDialogTitl = Pos{12, 8}
+	ret.PosDialogTitle = Pos{12, 8}
 	ret.PosDialogText = Pos{44, 26}
 	ret.DialogPosition = kDialogUpper
 

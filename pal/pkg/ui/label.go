@@ -5,6 +5,7 @@ import (
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/text"
+	"github.com/njuwelkin/games/pal/pkg/utils"
 	"golang.org/x/image/font"
 )
 
@@ -29,4 +30,118 @@ func (l Label) Draw(screen *ebiten.Image, x, y int, shadow bool, c color.Color) 
 		text.Draw(screen, string(l.text), l.face, x+1, y+1, color.Black)
 	}
 	text.Draw(screen, string(l.text), l.face, x, y, c)
+}
+
+type PalLabel struct {
+}
+
+func DrawTextUnescape(screen *ebiten.Image,
+	text []rune, pos Pos, color byte,
+	shadow bool, use8x8Font bool, unEscape bool,
+	font_height int) {
+
+	rect := Rect{
+		Top:  pos.Y,
+		Left: pos.X,
+	}
+	if use8x8Font {
+		rect.Height = 8
+	} else {
+		rect.Height = font_height
+	}
+
+	if rect.Left > screen.Bounds().Dx() {
+		return
+	}
+
+	if unEscape {
+		text = unEscapeText(text)
+	}
+
+	for _, c := range text {
+		charWidth := 8
+		if !use8x8Font {
+			charWidth = palCharWidth(c)
+		}
+
+		if shadow {
+			drawCharOnSurface(screen, c, Pos{X: rect.Left + 1, Y: rect.Top}, 0, use8x8Font, font_height)
+			drawCharOnSurface(screen, c, Pos{X: rect.Left, Y: rect.Top + 1}, 0, use8x8Font, font_height)
+			drawCharOnSurface(screen, c, Pos{X: rect.Left + 1, Y: rect.Top + 1}, 0, use8x8Font, font_height)
+		}
+		drawCharOnSurface(screen, c, Pos{X: rect.Left, Y: rect.Top}, color, use8x8Font, font_height)
+		rect.Left += charWidth
+		rect.Width += charWidth
+		if rect.Left+rect.Width > screen.Bounds().Dx() {
+			break
+		}
+	}
+}
+
+func drawCharOnSurface(screen *ebiten.Image, c rune, pos Pos, col byte, use8x8Font bool, fontHeight int) {
+	// i don't know what's it, copied from sdl_pal
+	if screen == nil ||
+		(c > utils.Unicode_lower_top && c < utils.Unicode_upper_base) ||
+		c >= utils.Unicode_upper_top ||
+		(fontHeight == 8 && c >= 0x100) {
+		return
+	}
+
+	if c >= utils.Unicode_upper_base {
+		c -= (utils.Unicode_upper_base - utils.Unicode_lower_top)
+	}
+
+	//dx := screen.Bounds().Dx()
+	//dy := screen.Bounds().Dy()
+
+	if use8x8Font {
+		for i := 0; i < 8; i++ {
+			y := pos.Y + i
+			for j := 0; j < 8; j++ {
+				x := pos.X + j
+				if utils.ISO_FONT_8X8[c][i]&(1<<j) != 0 {
+					screen.Set(x, y, color.Gray{col})
+				}
+			}
+		}
+	} else {
+		if utils.Font_width[c] == 32 {
+
+		} else {
+
+		}
+	}
+	return
+}
+
+// i don't know what's it, copied from sdl_pal
+func palCharWidth(c rune) int {
+	if (c > utils.Unicode_lower_top && c < utils.Unicode_upper_base) ||
+		c >= utils.Unicode_upper_top {
+		return 0
+	}
+	if c >= utils.Unicode_upper_base {
+		c -= (utils.Unicode_upper_base - utils.Unicode_lower_top)
+	}
+	return int(utils.Font_width[c]) >> 1
+}
+
+func unEscapeText(text []rune) []rune {
+	ret := []rune{}
+	for _, c := range text {
+		switch c {
+		case '-':
+		case '\'':
+		case '@':
+		case '"':
+		case '$':
+		case '~':
+		case ')':
+		case '(':
+		case '\\':
+		default:
+			ret = append(ret, c)
+		}
+	}
+	return ret
 }
