@@ -22,6 +22,14 @@ type MenuItem struct {
 	Label   []rune
 	Enabled bool
 	Pos     Pos
+
+	OnSelect func()
+}
+
+func (mi MenuItem) selected() {
+	if mi.OnSelect != nil {
+		mi.OnSelect()
+	}
 }
 
 type Menu struct {
@@ -66,15 +74,14 @@ func (m *Menu) Update() error {
 		return nil
 	}
 	if DefaultInput.Pressed(KeyAny) {
-		l := len(m.items)
 		if DefaultInput.Pressed(KeyUp) {
-			m.selectedItem = (m.selectedItem + l - 1) % l
+			m._prev()
 		} else if DefaultInput.Pressed(KeyDown) {
-			m.selectedItem = (m.selectedItem + 1) % l
+			m._next()
 		} else if DefaultInput.Pressed(KeyLeft) {
-			m.selectedItem = (m.selectedItem + l - 1) % l
+			m._prev()
 		} else if DefaultInput.Pressed(KeyRight) {
-			m.selectedItem = (m.selectedItem + 1) % l
+			m._next()
 		} else if DefaultInput.Pressed(KeySpace) {
 			m._select(m.selectedItem)
 		} else if DefaultInput.Pressed(KeyEcs) {
@@ -105,9 +112,32 @@ func (m *Menu) Draw(screen *ebiten.Image) {
 	}
 }
 
+func (m *Menu) _next() {
+	for i := 0; i < len(m.items); i++ {
+		m.selectedItem = (m.selectedItem + 1) % len(m.items)
+		if m.items[m.selectedItem].Enabled {
+			break
+		}
+	}
+}
+
+func (m *Menu) _prev() {
+	l := len(m.items)
+	for i := 0; i < l; i++ {
+		m.selectedItem = (m.selectedItem + l - 1) % l
+		if m.items[m.selectedItem].Enabled {
+			break
+		}
+	}
+}
+
 func (m *Menu) _select(idx int) {
 	if m.OnSelect != nil {
 		m.OnSelect(idx)
+	} else {
+		if m.items[idx].OnSelect != nil {
+			m.items[idx].OnSelect()
+		}
 	}
 }
 
