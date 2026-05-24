@@ -33,12 +33,13 @@ func (l Label) Draw(screen *ebiten.Image, x, y int, shadow bool, c color.Color) 
 }
 
 type PalLabel struct {
+	text []rune
 }
 
 func DrawTextUnescape(screen *ebiten.Image,
 	text []rune, pos Pos, color byte,
 	shadow bool, use8x8Font bool, unEscape bool,
-	font_height int) {
+	font_height int, plt []color.RGBA) {
 
 	rect := Rect{
 		Top:  pos.Y,
@@ -65,11 +66,11 @@ func DrawTextUnescape(screen *ebiten.Image,
 		}
 
 		if shadow {
-			drawCharOnSurface(screen, c, Pos{X: rect.Left + 1, Y: rect.Top}, 0, use8x8Font, font_height)
-			drawCharOnSurface(screen, c, Pos{X: rect.Left, Y: rect.Top + 1}, 0, use8x8Font, font_height)
-			drawCharOnSurface(screen, c, Pos{X: rect.Left + 1, Y: rect.Top + 1}, 0, use8x8Font, font_height)
+			drawCharOnSurface(screen, c, Pos{X: rect.Left + 1, Y: rect.Top}, 0, use8x8Font, font_height, plt)
+			drawCharOnSurface(screen, c, Pos{X: rect.Left, Y: rect.Top + 1}, 0, use8x8Font, font_height, plt)
+			drawCharOnSurface(screen, c, Pos{X: rect.Left + 1, Y: rect.Top + 1}, 0, use8x8Font, font_height, plt)
 		}
-		drawCharOnSurface(screen, c, Pos{X: rect.Left, Y: rect.Top}, color, use8x8Font, font_height)
+		drawCharOnSurface(screen, c, Pos{X: rect.Left, Y: rect.Top}, color, use8x8Font, font_height, plt)
 		rect.Left += charWidth
 		rect.Width += charWidth
 		if rect.Left+rect.Width > screen.Bounds().Dx() {
@@ -78,7 +79,8 @@ func DrawTextUnescape(screen *ebiten.Image,
 	}
 }
 
-func drawCharOnSurface(screen *ebiten.Image, c rune, pos Pos, col byte, use8x8Font bool, fontHeight int) {
+func drawCharOnSurface(screen *ebiten.Image, c rune, pos Pos, col byte,
+	use8x8Font bool, fontHeight int, plt []color.RGBA) {
 	// i don't know what's it, copied from sdl_pal
 	if screen == nil ||
 		(c > utils.Unicode_lower_top && c < utils.Unicode_upper_base) ||
@@ -100,18 +102,39 @@ func drawCharOnSurface(screen *ebiten.Image, c rune, pos Pos, col byte, use8x8Fo
 			for j := 0; j < 8; j++ {
 				x := pos.X + j
 				if utils.ISO_FONT_8X8[c][i]&(1<<j) != 0 {
-					screen.Set(x, y, color.Gray{col})
+					screen.Set(x, y, plt[col])
 				}
 			}
 		}
 	} else {
 		if utils.Font_width[c] == 32 {
-
+			for i := 0; i < fontHeight*2; i += 2 {
+				y := pos.Y + i
+				for j := 0; j < 8; j++ {
+					x := pos.X + j
+					if utils.Unicode_font[c][i]&(1<<(7-j)) != 0 {
+						screen.Set(x, y, plt[col])
+					}
+				}
+				for j := 0; j < 8; j++ {
+					x := pos.X + j + 8
+					if utils.Unicode_font[c][i+1]&(1<<(7-j)) != 0 {
+						screen.Set(x, y, plt[col])
+					}
+				}
+			}
 		} else {
-
+			for i := 0; i < fontHeight; i++ {
+				y := pos.Y + i
+				for j := 0; j < 8; j++ {
+					x := pos.X + j
+					if utils.Unicode_font[c][i]&(1<<(7-j)) != 0 {
+						screen.Set(x, y, plt[col])
+					}
+				}
+			}
 		}
 	}
-	return
 }
 
 // i don't know what's it, copied from sdl_pal
