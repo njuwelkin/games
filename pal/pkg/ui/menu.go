@@ -5,16 +5,15 @@ import (
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/njuwelkin/games/pal/pkg/mkf"
-	"golang.org/x/image/font"
 )
 
 const (
-	MENUITEM_COLOR                   = 0x4F
-	MENUITEM_COLOR_INACTIVE          = 0x18
-	MENUITEM_COLOR_CONFIRMED         = 0x2C
-	MENUITEM_COLOR_SELECTED_INACTIVE = 0x1C
-	MENUITEM_COLOR_SELECTED_FIRST    = 0xF9
-	MENUITEM_COLOR_SELECTED_TOTALNUM = 6
+	MENUITEM_COLOR                   byte = 0x4F
+	MENUITEM_COLOR_INACTIVE          byte = 0x18
+	MENUITEM_COLOR_CONFIRMED         byte = 0x2C
+	MENUITEM_COLOR_SELECTED_INACTIVE byte = 0x1C
+	MENUITEM_COLOR_SELECTED_FIRST    byte = 0xF9
+	MENUITEM_COLOR_SELECTED_TOTALNUM byte = 6
 )
 
 type MenuItem struct {
@@ -42,19 +41,25 @@ type Menu struct {
 
 	bgd *mkf.BitMap
 
-	face font.Face
+	use8x8Font  bool
+	font_height int
+	plt         []color.RGBA
 
 	OnSelect func(int)
 }
 
-func NewMenu(t, l, h, w int, p ParentCom, face font.Face, canClose bool) *Menu {
+func NewMenu(t, l, h, w int, p ParentCom, use8x8Font bool,
+	font_height int, plt []color.RGBA, canClose bool) *Menu {
 	ret := Menu{
 		BasicComponent: *NewComponent(t, l, h, w, p),
 		items:          []*MenuItem{},
 		active:         true,
 		interval:       20,
 		selectedItem:   0,
-		face:           face,
+		//face:           face,
+		plt:         plt,
+		font_height: font_height,
+		use8x8Font:  use8x8Font,
 	}
 	return &ret
 }
@@ -70,6 +75,7 @@ func (m *Menu) AddItem(label []rune, pos Pos, enabled bool) *MenuItem {
 }
 
 func (m *Menu) Update() error {
+	m.BasicComponent.Update()
 	if !m.active {
 		return nil
 	}
@@ -101,14 +107,31 @@ func (m *Menu) Draw(screen *ebiten.Image) {
 		screen.DrawImage(img, nil)
 	}
 	for i, v := range m.items {
-		l := NewLabel(v.Label, m.face)
+		//l := NewLabel(v.Label, m.face)
 		//op := ebiten.DrawImageOptions{}
 		//op.GeoM.Translate(float64(v.Pos.X), float64(v.Pos.Y))
-		if i == m.selectedItem {
-			l.Draw(screen, v.Pos.X, v.Pos.Y, true, color.White)
+		color := MENUITEM_COLOR
+		if !v.Enabled {
+			if i == m.selectedItem {
+				color = MENUITEM_COLOR_SELECTED_INACTIVE
+				//l.Draw(screen, v.Pos.X, v.Pos.Y, true, color.White)
+			} else {
+				color = MENUITEM_COLOR_INACTIVE
+				//l.Draw(screen, v.Pos.X, v.Pos.Y, true, color.Gray16{0x8fff})
+			}
 		} else {
-			l.Draw(screen, v.Pos.X, v.Pos.Y, true, color.Gray16{0x8fff})
+			if i == m.selectedItem {
+				color = m.getMenuColorSelected()
+				//l.Draw(screen, v.Pos.X, v.Pos.Y, true, color.White)
+			} else {
+				color = MENUITEM_COLOR
+				//l.Draw(screen, v.Pos.X, v.Pos.Y, true, color.Gray16{0x8fff})
+			}
 		}
+		DrawTextUnescape(screen,
+			v.Label,
+			v.Pos,
+			color, true, false, true, m.font_height, m.plt)
 	}
 }
 
@@ -134,10 +157,8 @@ func (m *Menu) _prev() {
 func (m *Menu) _select(idx int) {
 	if m.OnSelect != nil {
 		m.OnSelect(idx)
-	} else {
-		if m.items[idx].OnSelect != nil {
-			m.items[idx].OnSelect()
-		}
+	} else { // if call back has been set for whole menu, ignore call back for items
+		m.items[idx].selected()
 	}
 }
 
@@ -145,4 +166,9 @@ func (m *Menu) Close(msg any) {
 	if m.canClose {
 		m.BasicComponent.Close(msg)
 	}
+}
+
+func (m *Menu) getMenuColorSelected() byte {
+	return MENUITEM_COLOR_SELECTED_FIRST +
+		byte((m.crtFrame/(60/int(MENUITEM_COLOR_SELECTED_TOTALNUM)))%int(MENUITEM_COLOR_SELECTED_TOTALNUM))
 }

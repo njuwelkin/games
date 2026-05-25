@@ -109,7 +109,7 @@ func drawCharOnSurface(screen *ebiten.Image, c rune, pos Pos, col byte,
 	} else {
 		if utils.Font_width[c] == 32 {
 			for i := 0; i < fontHeight*2; i += 2 {
-				y := pos.Y + i
+				y := pos.Y + i/2
 				for j := 0; j < 8; j++ {
 					x := pos.X + j
 					if utils.Unicode_font[c][i]&(1<<(7-j)) != 0 {

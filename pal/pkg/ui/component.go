@@ -6,9 +6,10 @@ var (
 )
 
 type BasicComponent struct {
-	id     int
-	RECT   Rect
-	parent ParentCom
+	id       int
+	RECT     Rect
+	parent   ParentCom
+	crtFrame int
 
 	OnClose func()
 }
@@ -18,6 +19,7 @@ func NewComponent(t, l, h, w int, parent ParentCom) *BasicComponent {
 	ret.RECT = Rect{t, l, h, w}
 	ret.id = globalComponentID
 	ret.parent = parent
+	ret.crtFrame = 0
 	globalComponentID++
 	return &ret
 }
@@ -35,6 +37,7 @@ func (bc *BasicComponent) SetSize(height, width int) {
 }
 
 func (bc *BasicComponent) Update() error {
+	bc.crtFrame++
 	return nil
 }
 

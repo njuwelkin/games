@@ -48,9 +48,10 @@ func newOpeningMenu(parent ui.ParentCom) *openingMenu {
 	}
 
 	ret.Timer().AddOneTimeEvent(60, func(int) {
-		ret.menu = ui.NewMenu(0, 0, 200, 320, &ret, Globals.Font.NormalFont, false)
-		ret.menu.AddItem(Globals.Text.WordBuf[7], ui.Pos{X: 130, Y: 85})
-		ret.menu.AddItem(Globals.Text.WordBuf[8], ui.Pos{X: 130, Y: 110})
+		ret.menu = ui.NewMenu(0, 0, 200, 320, &ret, false, 16,
+			plt, true)
+		ret.menu.AddItem(Globals.Text.WordBuf[7], ui.Pos{X: 130, Y: 85}, true)
+		ret.menu.AddItem(Globals.Text.WordBuf[8], ui.Pos{X: 130, Y: 110}, true)
 		ret.menu.OnSelect = func(idx int) {
 			if idx == 0 {
 				// new game
@@ -79,7 +80,6 @@ func (om *openingMenu) Update() error {
 func (om *openingMenu) Draw(screen *ebiten.Image) {
 	screen.DrawImage(om.backGround.ToImageWithPalette(om.GetPalette()), nil)
 	om.BasicWindow.Draw(screen)
-	//ui.NewLabel(globals.Text.WordBuf[8], globals.Font.NormalFont).Draw(screen, 0, 0, false, color.White)
 }
 
 func (om *openingMenu) Layout(outsideWidth, outsideHeight int) (int, int) {

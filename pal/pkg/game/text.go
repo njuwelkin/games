@@ -126,9 +126,10 @@ func loadText() TextLib {
 		base := i * WordLength
 		wcs := multiByteToWChar(CP_BIG5, temp[base:base+WordLength])
 		if wcs[len(wcs)-1] == '1' {
-			wcs[len(wcs)-1] = 0
+			//wcs[len(wcs)-1] = 0
+			wcs = wcs[:len(wcs)-1]
 		}
-		wcs = append(wcs, 0)
+		//wcs = append(wcs, 0)
 		//fmt.Println(string(wcs))
 		ret.WordBuf = append(ret.WordBuf, wcs)
 	}
