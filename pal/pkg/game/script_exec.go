@@ -2,9 +2,7 @@ package game
 
 import (
 	"math/rand"
-	"path/filepath"
 
-	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/njuwelkin/games/pal/pkg/mkf"
 	"github.com/njuwelkin/games/pal/pkg/ui"
 )
@@ -191,8 +189,10 @@ func (se *ScriptExecutor) executeStep() bool {
 			numCharFace := pScript.Operand[0]
 			playingRNG := pScript.Operand[2] != 0
 			_, _, _ = fontColor, numCharFace, playingRNG
-			dialog := se.createDialog(ui.DialogCenter, fontColor, numCharFace, playingRNG)
-			se.owner.AddComponent(dialog)
+			dialog := se.owner.createDialog(ui.DialogCenter, fontColor, numCharFace, playingRNG)
+			dialog.OnClose = func() {
+				se.dialog = nil
+			}
 			se.dialog = dialog
 			se.scriptEntry++
 		case 0x003C:
@@ -206,8 +206,10 @@ func (se *ScriptExecutor) executeStep() bool {
 			numCharFace := pScript.Operand[0]
 			playingRNG := pScript.Operand[2] != 0
 			_, _, _ = fontColor, numCharFace, playingRNG
-			dialog := se.createDialog(ui.DialogUpper, fontColor, numCharFace, playingRNG)
-			se.owner.AddComponent(dialog)
+			dialog := se.owner.createDialog(ui.DialogUpper, fontColor, numCharFace, playingRNG)
+			dialog.OnClose = func() {
+				se.dialog = nil
+			}
 			se.dialog = dialog
 			se.scriptEntry++
 		case 0x003D:
@@ -221,8 +223,10 @@ func (se *ScriptExecutor) executeStep() bool {
 			numCharFace := pScript.Operand[0]
 			playingRNG := pScript.Operand[2] != 0
 			_, _, _ = fontColor, numCharFace, playingRNG
-			dialog := se.createDialog(ui.DialogLower, fontColor, numCharFace, playingRNG)
-			se.owner.AddComponent(dialog)
+			dialog := se.owner.createDialog(ui.DialogLower, fontColor, numCharFace, playingRNG)
+			dialog.OnClose = func() {
+				se.dialog = nil
+			}
 			se.dialog = dialog
 			se.scriptEntry++
 		case 0x003E:
@@ -258,29 +262,4 @@ func (se *ScriptExecutor) executeStep() bool {
 	}
 
 	return se.ended
-}
-
-func (se *ScriptExecutor) createDialog(position ui.DialogType, fontColor, numCharFace mkf.WORD, playingRNG bool) *ui.Dialog {
-	var avatarImg *ebiten.Image = nil
-	if numCharFace > 0 {
-		rgm, err := mkf.NewRgmMkf(filepath.Join(Globals.Config.GamePath, "RGM.MKF"))
-		if err != nil {
-			panic(err.Error())
-		}
-		defer rgm.Close()
-		bmp, err := rgm.GetFaceBmp(mkf.INT(numCharFace))
-		if err != nil || bmp == nil {
-			panic(err.Error())
-		}
-		plt, err := mkf.GetPalette(mkf.INT(Globals.G.CrtPaletteNum), false, Globals.Config.GamePath)
-		if err != nil {
-			panic(err.Error())
-		}
-		avatarImg = bmp.ToImageWithPalette(plt)
-	}
-	dialog := ui.NewDialog(position, se.owner, avatarImg, Globals.Font.NormalFont)
-	dialog.OnClose = func() {
-		se.dialog = nil
-	}
-	return dialog
 }

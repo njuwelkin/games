@@ -1,12 +1,11 @@
 package ui
 
 import (
-	"image"
+	"fmt"
+	"image/color"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
-	"golang.org/x/image/font"
-	"golang.org/x/image/math/fixed"
 )
 
 type DialogType int
@@ -18,8 +17,8 @@ const (
 )
 
 const (
-	dialogWidth  = 315
-	dialogHeight = 160
+	dialogWidth  = 310
+	dialogHeight = 100
 )
 
 type Dialog struct {
@@ -28,48 +27,53 @@ type Dialog struct {
 	avatarImg      *ebiten.Image
 	avatarPosition Pos
 
-	lines        [][]rune
-	face         font.Face
+	lines [][]rune
+	//face         font.Face
 	namePosition Pos
 	textPosition Pos
 	lineSpacing  int
 
 	currentPage     int
 	maxLinesPerPage int
+
+	//use8x8Font  bool
+	font_height int
+	plt         []color.RGBA
 }
 
-func NewDialog(position DialogType, parent ParentCom, avatar *ebiten.Image, face font.Face) *Dialog {
+func NewDialog(position DialogType, parent ParentCom, avatar *ebiten.Image, font_height int, plt []color.RGBA) *Dialog {
 	switch position {
 	case DialogUpper:
-		return NewDialogUpper(parent, avatar, face)
+		return NewDialogUpper(parent, avatar, font_height, plt)
 	case DialogLower:
-		return NewDialogLower(parent, avatar, face)
+		return NewDialogLower(parent, avatar, font_height, plt)
 	case DialogCenter:
-		return NewDialogCenter(parent, avatar, face)
+		return NewDialogCenter(parent, avatar, font_height, plt)
 	default:
 		panic("invalid dialog position")
 	}
 }
 
-func NewDialogUpper(parent ParentCom, avatar *ebiten.Image, face font.Face) *Dialog {
+func NewDialogUpper(parent ParentCom, avatar *ebiten.Image, font_height int, plt []color.RGBA) *Dialog {
 	// DialogUpper: 头像绘制在最左侧
 	avatarPos := Pos{X: 0, Y: 0}
 
 	return &Dialog{
-		BasicComponent:  *NewComponent(5, 5, dialogHeight, dialogWidth, parent),
+		BasicComponent:  *NewComponent(5, 7, dialogHeight, dialogWidth, parent),
 		avatarImg:       avatar,
 		avatarPosition:  avatarPos,
 		lines:           [][]rune{},
-		face:            face,
-		namePosition:    Pos{X: 10, Y: 20},
+		namePosition:    Pos{X: avatar.Bounds().Dx() + avatarPos.X, Y: 0},
 		textPosition:    Pos{X: 10, Y: 50},
 		lineSpacing:     20,
 		currentPage:     0,
 		maxLinesPerPage: 3,
+		font_height:     font_height,
+		plt:             plt,
 	}
 }
 
-func NewDialogLower(parent ParentCom, avatar *ebiten.Image, face font.Face) *Dialog {
+func NewDialogLower(parent ParentCom, avatar *ebiten.Image, font_height int, plt []color.RGBA) *Dialog {
 	// DialogLower: 头像绘制在最右侧
 	avatarPos := Pos{X: 0, Y: 0}
 	if avatar != nil {
@@ -78,33 +82,35 @@ func NewDialogLower(parent ParentCom, avatar *ebiten.Image, face font.Face) *Dia
 	}
 
 	return &Dialog{
-		BasicComponent:  *NewComponent(5, 150, dialogHeight, dialogWidth, parent),
+		BasicComponent:  *NewComponent(100, 7, dialogHeight, dialogWidth, parent),
 		avatarImg:       avatar,
 		avatarPosition:  avatarPos,
 		lines:           [][]rune{},
-		face:            face,
 		namePosition:    Pos{X: 10, Y: 20},
 		textPosition:    Pos{X: 10, Y: 50},
 		lineSpacing:     20,
 		currentPage:     0,
 		maxLinesPerPage: 3,
+		font_height:     font_height,
+		plt:             plt,
 	}
 }
 
-func NewDialogCenter(parent ParentCom, avatar *ebiten.Image, face font.Face) *Dialog {
+func NewDialogCenter(parent ParentCom, avatar *ebiten.Image, font_height int, plt []color.RGBA) *Dialog {
 	avatarPos := Pos{X: 0, Y: 0}
 
 	return &Dialog{
-		BasicComponent:  *NewComponent(150, 5, dialogHeight, dialogWidth, parent),
+		BasicComponent:  *NewComponent(150, 7, dialogHeight, dialogWidth, parent),
 		avatarImg:       avatar,
 		avatarPosition:  avatarPos,
 		lines:           [][]rune{},
-		face:            face,
 		namePosition:    Pos{X: 10, Y: 20},
 		textPosition:    Pos{X: 10, Y: 50},
 		lineSpacing:     20,
 		currentPage:     0,
 		maxLinesPerPage: 3,
+		font_height:     font_height,
+		plt:             plt,
 	}
 }
 
@@ -143,25 +149,36 @@ func (dialog *Dialog) Draw(screen *ebiten.Image) {
 	}
 
 	if len(dialog.lines) > 0 && len(dialog.lines[0]) > 0 {
-		d := &font.Drawer{
-			Dst:  screen,
-			Src:  image.White,
-			Face: dialog.face,
-			Dot:  fixed.P(dialog.namePosition.X, dialog.namePosition.Y),
+		// draw name
+		text := dialog.lines[0]
+		if text[len(text)-1] == 0xff1a || text[len(text)-1] == ':' {
+			DrawTextUnescape(screen, text, dialog.namePosition, FONT_COLOR_CYAN_ALT,
+				true, false, true, dialog.font_height, dialog.plt)
 		}
-		d.DrawString(string(dialog.lines[0]))
+		/*
+			d := &font.Drawer{
+				Dst:  screen,
+				Src:  image.White,
+				Face: dialog.face,
+				Dot:  fixed.P(dialog.namePosition.X, dialog.namePosition.Y),
+			}
+			d.DrawString(string(dialog.lines[0]))
+		*/
 	}
 
 	startLine := dialog.currentPage * dialog.maxLinesPerPage
 	for i := startLine; i < startLine+dialog.maxLinesPerPage && i < len(dialog.lines); i++ {
 		lineIdx := i - startLine
-		d := &font.Drawer{
-			Dst:  screen,
-			Src:  image.White,
-			Face: dialog.face,
-			Dot:  fixed.P(dialog.textPosition.X, dialog.textPosition.Y+lineIdx*dialog.lineSpacing),
-		}
-		d.DrawString(string(dialog.lines[i]))
+		fmt.Print(lineIdx)
+		/*
+			d := &font.Drawer{
+				Dst:  screen,
+				Src:  image.White,
+				Face: dialog.face,
+				Dot:  fixed.P(dialog.textPosition.X, dialog.textPosition.Y+lineIdx*dialog.lineSpacing),
+			}
+			d.DrawString(string(dialog.lines[i]))
+		*/
 	}
 }
 

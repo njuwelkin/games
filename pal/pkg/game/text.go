@@ -1,6 +1,7 @@
 package game
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"unsafe"
@@ -129,7 +130,13 @@ func loadText() TextLib {
 			//wcs[len(wcs)-1] = 0
 			wcs = wcs[:len(wcs)-1]
 		}
-		//wcs = append(wcs, 0)
+		if len(wcs) > 3 && wcs[0] == 26446 && wcs[1] == 22823 {
+			fmt.Println(wcs)
+		}
+		j := len(wcs)
+		for ; j > 0 && wcs[j-1] == 0; j-- {
+		}
+		wcs = wcs[:j]
 		//fmt.Println(string(wcs))
 		ret.WordBuf = append(ret.WordBuf, wcs)
 	}
@@ -161,9 +168,10 @@ func loadText() TextLib {
 		offsetNext := *((*mkf.DWORD)(oc.Get(i + 1)))
 		wcs := multiByteToWChar(CP_BIG5, temp[offsetCrt:offsetNext])
 		if wcs[len(wcs)-1] == '1' {
-			wcs[len(wcs)-1] = 0
+			//wcs[len(wcs)-1] = 0
+			wcs = wcs[:len(wcs)-1]
 		}
-		wcs = append(wcs, 0)
+		//wcs = append(wcs, 0)
 		//fmt.Println(i, string(wcs))
 		ret.MsgBuf = append(ret.MsgBuf, wcs)
 	}

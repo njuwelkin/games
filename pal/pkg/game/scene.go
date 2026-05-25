@@ -302,6 +302,26 @@ func (s *sceneScreen) Notify(subId int, event ui.ComEvent, msg any) {
 	}
 }
 
+func (s *sceneScreen) createDialog(position ui.DialogType, fontColor, numCharFace mkf.WORD, playingRNG bool) *ui.Dialog {
+	var avatarImg *ebiten.Image = nil
+	plt := s.GetPalette()
+	if numCharFace > 0 {
+		rgm, err := mkf.NewRgmMkf(filepath.Join(Globals.Config.GamePath, "RGM.MKF"))
+		if err != nil {
+			panic(err.Error())
+		}
+		defer rgm.Close()
+		bmp, err := rgm.GetFaceBmp(mkf.INT(numCharFace))
+		if err != nil || bmp == nil {
+			panic(err.Error())
+		}
+		avatarImg = bmp.ToImageWithPalette(plt)
+	}
+	dialog := ui.NewDialog(position, s, avatarImg, 16, plt)
+	s.AddComponent(dialog)
+	return dialog
+}
+
 func loadEventObjectSprites(idx, count mkf.WORD) [][]*mkf.BitMap {
 	ret := make([][]*mkf.BitMap, count)
 

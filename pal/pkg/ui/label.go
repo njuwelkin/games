@@ -9,6 +9,15 @@ import (
 	"golang.org/x/image/font"
 )
 
+const (
+	FONT_COLOR_DEFAULT  byte = 0x4F
+	FONT_COLOR_YELLOW        = 0x2D
+	FONT_COLOR_RED           = 0x1A
+	FONT_COLOR_CYAN          = 0x8D
+	FONT_COLOR_CYAN_ALT      = 0x8C
+	FONT_COLOR_RED_ALT       = 0x17
+)
+
 type Label struct {
 	text []rune
 	face font.Face
