@@ -295,3 +295,11 @@ func multiByteToWChar(cp CodePage, mbs []byte) []rune {
 	}
 	return wcs[:wlen]
 }
+
+// GetMessage 根据消息ID获取消息文本
+func (tl *TextLib) GetMessage(msgID int) string {
+	if msgID < 0 || msgID >= len(tl.MsgBuf) {
+		return ""
+	}
+	return string(tl.MsgBuf[msgID])
+}

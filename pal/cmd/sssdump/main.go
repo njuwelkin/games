@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/njuwelkin/games/pal/pkg/game"
 	"github.com/njuwelkin/games/pal/pkg/mkf"
-	"github.com/njuwelkin/games/pal/pkg/utils"
 )
 
 // 方向常量（与 pal/common.go 中的定义一致）
@@ -24,7 +24,7 @@ const (
 )
 
 var (
-	filePath            = flag.String("f", "SSS.MKF", "SSS.MKF 文件路径")
+	gamePath            = flag.String("gamepath", ".", "游戏数据目录路径")
 	listScenes          = flag.Bool("scenes", false, "列出所有场景")
 	listObjects         = flag.Bool("objects", false, "列出所有事件对象")
 	listScripts         = flag.Bool("scripts", false, "列出所有脚本条目")
@@ -42,70 +42,41 @@ func main() {
 		fmt.Fprintf(os.Stderr, "选项:\n")
 		flag.PrintDefaults()
 		fmt.Fprintf(os.Stderr, "\n示例:\n")
-		fmt.Fprintf(os.Stderr, "  %s -f SSS.MKF -all\n", os.Args[0])
-		fmt.Fprintf(os.Stderr, "  %s -f SSS.MKF -scenes\n", os.Args[0])
-		fmt.Fprintf(os.Stderr, "  %s -f SSS.MKF -scene 10\n", os.Args[0])
-		fmt.Fprintf(os.Stderr, "  %s -f SSS.MKF -objects\n", os.Args[0])
-		fmt.Fprintf(os.Stderr, "  %s -f SSS.MKF -object 5\n", os.Args[0])
-		fmt.Fprintf(os.Stderr, "  %s -f SSS.MKF -scene-enter-script 10\n", os.Args[0])
-		fmt.Fprintf(os.Stderr, "  %s -f SSS.MKF -scene-teleport-script 10\n", os.Args[0])
+		fmt.Fprintf(os.Stderr, "  %s -gamepath /path/to/game -all\n", os.Args[0])
+		fmt.Fprintf(os.Stderr, "  %s -gamepath /path/to/game -scenes\n", os.Args[0])
+		fmt.Fprintf(os.Stderr, "  %s -gamepath /path/to/game -scene 10\n", os.Args[0])
+		fmt.Fprintf(os.Stderr, "  %s -gamepath /path/to/game -objects\n", os.Args[0])
+		fmt.Fprintf(os.Stderr, "  %s -gamepath /path/to/game -object 5\n", os.Args[0])
+		fmt.Fprintf(os.Stderr, "  %s -gamepath /path/to/game -scene-enter-script 10\n", os.Args[0])
+		fmt.Fprintf(os.Stderr, "  %s -gamepath /path/to/game -scene-teleport-script 10\n", os.Args[0])
 	}
 
 	flag.Parse()
 
-	if *filePath == "" {
-		fmt.Println("错误: 必须指定文件路径")
-		flag.Usage()
-		os.Exit(1)
+	if *gamePath != "" {
+		os.Setenv("PAL_GAME_PATH", *gamePath)
 	}
 
-	sss, err := mkf.NewSSSMkf(*filePath)
-	if err != nil {
-		fmt.Printf("无法打开文件 %s: %v\n", *filePath, err)
-		os.Exit(1)
-	}
-	defer sss.Close()
-
-	// 获取脚本块（用于显示脚本内容）
-	scriptChunk, err := sss.GetScriptEntryChunk()
-	if err != nil {
-		fmt.Printf("读取脚本数据失败: %v\n", err)
-	}
-
-	// 获取消息偏移表和消息数据（用于显示文本内容）
-	var msgOffsetChunk *mkf.MsgOffsetChunk
-	var msgData []byte
-
-	msgOffsetChunk, err = sss.GetMsgOffsetChunk()
-	if err != nil {
-		fmt.Printf("读取消息偏移表失败: %v\n", err)
-	}
-
-	msgData, err = os.ReadFile("../../M.MSG")
-	if err != nil {
-		fmt.Printf("读取 M.MSG 文件失败: %v\n", err)
-	}
+	game.InitGlobalSetting()
 
 	if *listAll || *listScenes || *sceneIndex >= 0 {
-		showScenes(&sss, scriptChunk, msgOffsetChunk, msgData, *sceneIndex, *listAll || *listScenes)
+		showScenes(*sceneIndex, *listAll || *listScenes)
 	}
 
 	if *listAll || *listObjects || *objectIndex >= 0 {
-		showEventObjects(&sss, *objectIndex, *listAll || *listObjects)
+		showEventObjects(*objectIndex, *listAll || *listObjects)
 	}
 
 	if *listAll || *listScripts {
-		showScripts(&sss)
+		showScripts()
 	}
 
-	// 显示场景进入脚本内容
 	if *sceneEnterScript >= 0 {
-		showSceneEnterScript(&sss, scriptChunk, msgOffsetChunk, msgData, *sceneEnterScript)
+		showSceneEnterScript(*sceneEnterScript)
 	}
 
-	// 显示场景传送脚本内容
 	if *sceneTeleportScript >= 0 {
-		showSceneTeleportScript(&sss, scriptChunk, msgOffsetChunk, msgData, *sceneTeleportScript)
+		showSceneTeleportScript(*sceneTeleportScript)
 	}
 
 	if !*listAll && !*listScenes && !*listObjects && !*listScripts &&
@@ -114,40 +85,37 @@ func main() {
 	}
 }
 
-func showScenes(sss *mkf.SSSMkf, scriptChunk *mkf.ScriptEntryChunk, msgOffsetChunk *mkf.MsgOffsetChunk, msgData []byte, idx int, listAll bool) {
-	chunk, err := sss.GetSceneChunk()
-	if err != nil {
-		fmt.Printf("读取场景数据失败: %v\n", err)
-		return
-	}
-
-	count := chunk.Len()
+func showScenes(idx int, listAll bool) {
+	scenes := game.Globals.G.Scenes
 
 	if idx >= 0 {
-		if idx >= count {
-			fmt.Printf("错误: 场景索引 %d 超出范围（最大索引: %d）\n", idx, count-1)
+		if idx >= len(scenes) {
+			fmt.Printf("错误: 场景索引 %d 超出范围（最大索引: %d）\n", idx, len(scenes)-1)
 			return
 		}
-		scene := chunk.GetScene(idx)
+		scene := scenes[idx]
+		if scene.MapNum == 0 && scene.ScriptOnEnter == 0 &&
+			scene.ScriptOnTeleport == 0 && scene.EventObjectIndex == 0 {
+			fmt.Printf("场景 #%d 为空\n", idx)
+			return
+		}
 		fmt.Printf("\n=== 场景 #%d ===\n", idx)
 		printScene(scene)
 
-		// 如果有脚本块，显示脚本内容
-		if scriptChunk != nil {
-			if scene.ScriptOnEnter != 0 {
-				fmt.Println("\n  --- 进入脚本内容 ---")
-				printScriptContent(scriptChunk, msgOffsetChunk, msgData, int(scene.ScriptOnEnter))
-			}
-			if scene.ScriptOnTeleport != 0 {
-				fmt.Println("\n  --- 传送脚本内容 ---")
-				printScriptContent(scriptChunk, msgOffsetChunk, msgData, int(scene.ScriptOnTeleport))
-			}
+		if scene.ScriptOnEnter != 0 {
+			fmt.Println("\n  --- 进入脚本内容 ---")
+			printScriptContent(int(scene.ScriptOnEnter))
+		}
+		if scene.ScriptOnTeleport != 0 {
+			fmt.Println("\n  --- 传送脚本内容 ---")
+			printScriptContent(int(scene.ScriptOnTeleport))
 		}
 	} else if listAll {
 		fmt.Println("\n=== 场景列表 ===")
-		for i := 0; i < count; i++ {
-			scene := chunk.GetScene(i)
-			if scene.MapNum == 0 && scene.ScriptOnEnter == 0 && scene.ScriptOnTeleport == 0 && scene.EventObjectIndex == 0 {
+		for i := 0; i < len(scenes); i++ {
+			scene := scenes[i]
+			if scene.MapNum == 0 && scene.ScriptOnEnter == 0 &&
+				scene.ScriptOnTeleport == 0 && scene.EventObjectIndex == 0 {
 				continue
 			}
 			fmt.Printf("[%4d] 地图:%4d 进入脚本:%4d 传送脚本:%4d 对象索引:%4d\n",
@@ -163,59 +131,46 @@ func printScene(scene mkf.Scene) {
 	fmt.Printf("  事件对象起始索引: %d\n", scene.EventObjectIndex)
 }
 
-func showSceneEnterScript(sss *mkf.SSSMkf, scriptChunk *mkf.ScriptEntryChunk, msgOffsetChunk *mkf.MsgOffsetChunk, msgData []byte, sceneIdx int) {
-	sceneChunk, err := sss.GetSceneChunk()
-	if err != nil {
-		fmt.Printf("读取场景数据失败: %v\n", err)
+func showSceneEnterScript(sceneIdx int) {
+	scenes := game.Globals.G.Scenes
+
+	if sceneIdx >= len(scenes) {
+		fmt.Printf("错误: 场景索引 %d 超出范围（最大索引: %d）\n", sceneIdx, len(scenes)-1)
 		return
 	}
 
-	count := sceneChunk.Len()
-	if sceneIdx >= count {
-		fmt.Printf("错误: 场景索引 %d 超出范围（最大索引: %d）\n", sceneIdx, count-1)
-		return
-	}
-
-	scene := sceneChunk.GetScene(sceneIdx)
+	scene := scenes[sceneIdx]
 	if scene.ScriptOnEnter == 0 {
 		fmt.Printf("场景 #%d 没有进入脚本\n", sceneIdx)
 		return
 	}
 
 	fmt.Printf("\n=== 场景 #%d 的进入脚本 (索引: %d) ===\n", sceneIdx, scene.ScriptOnEnter)
-	printScriptContent(scriptChunk, msgOffsetChunk, msgData, int(scene.ScriptOnEnter))
+	printScriptContent(int(scene.ScriptOnEnter))
 }
 
-func showSceneTeleportScript(sss *mkf.SSSMkf, scriptChunk *mkf.ScriptEntryChunk, msgOffsetChunk *mkf.MsgOffsetChunk, msgData []byte, sceneIdx int) {
-	sceneChunk, err := sss.GetSceneChunk()
-	if err != nil {
-		fmt.Printf("读取场景数据失败: %v\n", err)
+func showSceneTeleportScript(sceneIdx int) {
+	scenes := game.Globals.G.Scenes
+
+	if sceneIdx >= len(scenes) {
+		fmt.Printf("错误: 场景索引 %d 超出范围（最大索引: %d）\n", sceneIdx, len(scenes)-1)
 		return
 	}
 
-	count := sceneChunk.Len()
-	if sceneIdx >= count {
-		fmt.Printf("错误: 场景索引 %d 超出范围（最大索引: %d）\n", sceneIdx, count-1)
-		return
-	}
-
-	scene := sceneChunk.GetScene(sceneIdx)
+	scene := scenes[sceneIdx]
 	if scene.ScriptOnTeleport == 0 {
 		fmt.Printf("场景 #%d 没有传送脚本\n", sceneIdx)
 		return
 	}
 
 	fmt.Printf("\n=== 场景 #%d 的传送脚本 (索引: %d) ===\n", sceneIdx, scene.ScriptOnTeleport)
-	printScriptContent(scriptChunk, msgOffsetChunk, msgData, int(scene.ScriptOnTeleport))
+	printScriptContent(int(scene.ScriptOnTeleport))
 }
 
-func printScriptContent(scriptChunk *mkf.ScriptEntryChunk, msgOffsetChunk *mkf.MsgOffsetChunk, msgData []byte, startIndex int) {
-	if scriptChunk == nil {
-		fmt.Println("  无法读取脚本数据")
-		return
-	}
+func printScriptContent(startIndex int) {
+	scriptEntries := game.Globals.G.ScriptEntries
 
-	count := scriptChunk.Len()
+	count := len(scriptEntries)
 	if startIndex >= count {
 		fmt.Printf("  脚本索引 %d 超出范围\n", startIndex)
 		return
@@ -227,17 +182,15 @@ func printScriptContent(scriptChunk *mkf.ScriptEntryChunk, msgOffsetChunk *mkf.M
 			break
 		}
 
-		entry := scriptChunk.GetScriptEntry(idx)
+		entry := scriptEntries[idx]
 
-		// 显示脚本指令
 		fmt.Printf("    [%5d] 操作码: 0x%04X 操作数: [%d, %d, %d]  %s",
 			idx, entry.Operation, entry.Operand[0], entry.Operand[1], entry.Operand[2],
 			opcodeToString(entry.Operation))
 
-		// 如果是显示文字操作码，显示文本内容
-		if entry.Operation == 0xFFFF && msgOffsetChunk != nil && msgData != nil {
+		if entry.Operation == 0xFFFF {
 			msgID := entry.Operand[0]
-			msgText := getMessageText(msgOffsetChunk, msgData, int(msgID))
+			msgText := game.Globals.Text.GetMessage(int(msgID))
 			if msgText != "" {
 				fmt.Printf("  文本: %s", msgText)
 			}
@@ -245,7 +198,6 @@ func printScriptContent(scriptChunk *mkf.ScriptEntryChunk, msgOffsetChunk *mkf.M
 
 		fmt.Println()
 
-		// 遇到停止指令退出
 		if entry.Operation == OP_STOP {
 			break
 		}
@@ -254,83 +206,23 @@ func printScriptContent(scriptChunk *mkf.ScriptEntryChunk, msgOffsetChunk *mkf.M
 	}
 }
 
-// getMessageText 根据消息ID获取消息文本
-func getMessageText(msgOffsetChunk *mkf.MsgOffsetChunk, msgData []byte, msgID int) string {
-	if msgOffsetChunk == nil || msgData == nil {
-		return ""
-	}
+func showEventObjects(idx int, listAll bool) {
+	objects := game.Globals.G.EventObjects
 
-	count := msgOffsetChunk.Len()
-	if msgID < 0 || msgID >= count-1 {
-		return ""
-	}
-
-	offsetCrt := *((*mkf.DWORD)(msgOffsetChunk.Get(msgID)))
-	offsetNext := *((*mkf.DWORD)(msgOffsetChunk.Get(msgID + 1)))
-
-	if int(offsetCrt) >= len(msgData) || int(offsetNext) > len(msgData) {
-		return ""
-	}
-
-	// BIG5 编码解码
-	mbs := msgData[offsetCrt:offsetNext]
-	wcs := make([]rune, 0, len(mbs))
-	state := 0
-	for i := 0; i < len(mbs); i++ {
-		v := mbs[i]
-		if v == 0 {
-			break
-		}
-		if state == 0 {
-			if v <= 0x80 {
-				wcs = append(wcs, rune(v))
-			} else if v == 0xff {
-				wcs = append(wcs, 0xf8f8)
-			} else {
-				state = 1
-				continue
-			}
-		} else {
-			if v < 0x40 || v >= 0x7f && v <= 0xa0 {
-				wcs = append(wcs, 0x3f) // 无效字符
-			} else if v <= 0x7e {
-				wcs = append(wcs, utils.Cptbl_big5[mbs[i-1]-0x81][v-0x40])
-			} else {
-				wcs = append(wcs, utils.Cptbl_big5[mbs[i-1]-0x81][v-0x60])
-			}
-			state = 0
-		}
-	}
-
-	// 移除末尾的 '1' 字符（游戏中用于标记）
-	if len(wcs) > 0 && wcs[len(wcs)-1] == '1' {
-		wcs = wcs[:len(wcs)-1]
-	}
-
-	return string(wcs)
-}
-
-func showEventObjects(sss *mkf.SSSMkf, idx int, listAll bool) {
-	chunk, err := sss.GetEventObjectChunk()
-	if err != nil {
-		fmt.Printf("读取事件对象数据失败: %v\n", err)
-		return
-	}
-
-	count := chunk.Len()
+	count := len(objects)
 
 	if idx >= 0 {
 		if idx >= count {
 			fmt.Printf("错误: 事件对象索引 %d 超出范围（最大索引: %d）\n", idx, count-1)
 			return
 		}
-		obj := chunk.GetEventObject(idx)
+		obj := objects[idx]
 		fmt.Printf("\n=== 事件对象 #%d ===\n", idx)
 		printEventObject(obj)
 	} else if listAll {
 		fmt.Println("\n=== 事件对象列表 ===")
 		for i := 0; i < count; i++ {
-			obj := chunk.GetEventObject(i)
+			obj := objects[i]
 			if obj.X == 0 && obj.Y == 0 && obj.SpriteNum == 0 && obj.TriggerScript == 0 && obj.AutoScript == 0 {
 				continue
 			}
@@ -371,17 +263,13 @@ func directionToString(dir mkf.WORD) string {
 	}
 }
 
-func showScripts(sss *mkf.SSSMkf) {
-	chunk, err := sss.GetScriptEntryChunk()
-	if err != nil {
-		fmt.Printf("读取脚本数据失败: %v\n", err)
-		return
-	}
+func showScripts() {
+	scriptEntries := game.Globals.G.ScriptEntries
 
 	fmt.Println("\n=== 脚本条目列表 ===")
-	count := chunk.Len()
+	count := len(scriptEntries)
 	for i := 0; i < count; i++ {
-		entry := chunk.GetScriptEntry(i)
+		entry := scriptEntries[i]
 		if entry.Operation == 0 && entry.Operand[0] == 0 && entry.Operand[1] == 0 && entry.Operand[2] == 0 {
 			continue
 		}
