@@ -120,8 +120,8 @@ func (ss *splashScreen) Draw(screen *ebiten.Image) {
 	var imgSplashUp, imgSplashDown *ebiten.Image
 
 	crtPal := ss.GetPalette()
-	imgSplashUp = ss.bmpSplashUp.ToImageWithPalette(crtPal)
-	imgSplashDown = ss.bmpSplashDown.ToImageWithPalette(crtPal)
+	imgSplashUp = ss.bmpSplashUp.ToImageWithPalette(crtPal, false)
+	imgSplashDown = ss.bmpSplashDown.ToImageWithPalette(crtPal, false)
 
 	if ss.bgdPos > 1 {
 		ss.bgdPos--
@@ -135,7 +135,7 @@ func (ss *splashScreen) Draw(screen *ebiten.Image) {
 	if ss.count%6 == 0 {
 		ss.craneFrame = (ss.craneFrame + 1) % len(ss.bmpCranes)
 	}
-	craneImg := ss.bmpCranes[ss.craneFrame].ToImageWithPalette(crtPal)
+	craneImg := ss.bmpCranes[ss.craneFrame].ToImageWithPalette(crtPal, false)
 	if ss.cranePos.X > -craneImg.Bounds().Dx() {
 		if ss.count%2 == 0 {
 			ss.cranePos.X--
@@ -150,7 +150,7 @@ func (ss *splashScreen) Draw(screen *ebiten.Image) {
 	}
 	op = ebiten.DrawImageOptions{}
 	op.GeoM.Translate(255, 10)
-	screen.DrawImage(ss.bmpSplashTitle.ToImageWithPalette(crtPal), &op)
+	screen.DrawImage(ss.bmpSplashTitle.ToImageWithPalette(crtPal, false), &op)
 }
 
 func (ss *splashScreen) Layout(outsideWidth, outsideHeight int) (int, int) {

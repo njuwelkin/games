@@ -177,7 +177,7 @@ func (m Map) BlitToSurface(rect Rect, ucLayer byte, surface *ebiten.Image, plt [
 					}
 					bmp = m.GetTileBitmap(0, 0, 0, 0)
 				}
-				img := bmp.ToImageWithPalette(plt)
+				img := bmp.ToImageWithPalette(plt, false)
 				op := ebiten.DrawImageOptions{}
 				op.GeoM.Translate(float64(xPos), float64(yPos))
 				surface.DrawImage(img, &op)

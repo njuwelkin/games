@@ -152,9 +152,9 @@ func (bmp *BitMap) rleToImage(plt []color.RGBA, shadow bool) *ebiten.Image {
 	return img
 }
 
-func (bmp *BitMap) ToImageWithPalette(plt []color.RGBA) *ebiten.Image {
+func (bmp *BitMap) ToImageWithPalette(plt []color.RGBA, shadow bool) *ebiten.Image {
 	if bmp.rle {
-		return bmp.rleToImage(plt, false)
+		return bmp.rleToImage(plt, shadow)
 	} else {
 		return bmp.toImage(plt)
 	}

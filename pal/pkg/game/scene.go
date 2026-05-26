@@ -86,7 +86,6 @@ func (s *sceneScreen) Update() error {
 
 	// Update party gestures
 	updatePartyGestures(true)
-
 	return nil
 }
 
@@ -268,7 +267,7 @@ func (s *sceneScreen) drawSprites(screen *ebiten.Image) {
 	for _, spr := range s.spritesToDraw {
 		x := spr.x
 		y := spr.y //- int(spr.bitmap.GetHeight()) - spr.layer
-		img := spr.bitmap.ToImageWithPalette(plt)
+		img := spr.bitmap.ToImageWithPalette(plt, false)
 
 		op := &ebiten.DrawImageOptions{}
 		op.GeoM.Translate(float64(x), float64(y))
@@ -315,9 +314,10 @@ func (s *sceneScreen) createDialog(position ui.DialogType, fontColor, numCharFac
 		if err != nil || bmp == nil {
 			panic(err.Error())
 		}
-		avatarImg = bmp.ToImageWithPalette(plt)
+		avatarImg = bmp.ToImageWithPalette(plt, false)
 	}
 	dialog := ui.NewDialog(position, s, avatarImg, 16, plt)
+	s.RemoveAllComponents()
 	s.AddComponent(dialog)
 	return dialog
 }

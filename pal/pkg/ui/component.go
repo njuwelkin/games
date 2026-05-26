@@ -10,6 +10,7 @@ type BasicComponent struct {
 	RECT     Rect
 	parent   ParentCom
 	crtFrame int
+	enabled  bool
 
 	OnClose func()
 }
@@ -20,6 +21,7 @@ func NewComponent(t, l, h, w int, parent ParentCom) *BasicComponent {
 	ret.id = globalComponentID
 	ret.parent = parent
 	ret.crtFrame = 0
+	ret.enabled = true
 	globalComponentID++
 	return &ret
 }
@@ -37,6 +39,9 @@ func (bc *BasicComponent) SetSize(height, width int) {
 }
 
 func (bc *BasicComponent) Update() error {
+	if !bc.enabled {
+		return nil
+	}
 	bc.crtFrame++
 	return nil
 }
@@ -54,4 +59,20 @@ func (bc *BasicComponent) Close(msg any) {
 
 func (bc *BasicComponent) Parent() ParentCom {
 	return bc.parent
+}
+
+func (bc *BasicComponent) GetCrtFrame() int {
+	return bc.crtFrame
+}
+
+func (bc *BasicComponent) IsEnabled() bool {
+	return bc.enabled
+}
+
+func (bc *BasicComponent) Enable() {
+	bc.enabled = true
+}
+
+func (bc *BasicComponent) Disable() {
+	bc.enabled = false
 }

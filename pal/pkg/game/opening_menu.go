@@ -78,7 +78,7 @@ func (om *openingMenu) Update() error {
 }
 
 func (om *openingMenu) Draw(screen *ebiten.Image) {
-	screen.DrawImage(om.backGround.ToImageWithPalette(om.GetPalette()), nil)
+	screen.DrawImage(om.backGround.ToImageWithPalette(om.GetPalette(), false), nil)
 	om.BasicWindow.Draw(screen)
 }
 

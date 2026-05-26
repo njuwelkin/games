@@ -7,6 +7,7 @@ import (
 	"unsafe"
 
 	"github.com/njuwelkin/games/pal/pkg/mkf"
+	"github.com/njuwelkin/games/pal/pkg/ui"
 	"github.com/njuwelkin/games/pal/pkg/utils"
 )
 
@@ -104,7 +105,8 @@ type TextLib struct {
 	PlayingRNG bool
 
 	//BYTE            bufDialogIcons[282];
-	DialogIcons []byte
+	DialogIcons      []byte
+	DialogIconsChunk mkf.BitMapChunk
 }
 
 func loadText() TextLib {
@@ -193,9 +195,22 @@ func loadText() TextLib {
 	defer func() {
 		dataMkf.Close()
 	}()
-	ret.DialogIcons, err = dataMkf.ReadChunk(12)
+	dialogIcons, err := dataMkf.ReadChunk(12)
 	if err != nil {
 		panic(err.Error())
+	}
+	ret.DialogIcons = dialogIcons
+	ret.DialogIconsChunk = mkf.NewBitMapChunk(dialogIcons)
+	println(ret.DialogIconsChunk.GetCount())
+	for i := 0; i < int(ret.DialogIconsChunk.GetCount()); i++ {
+		buf, err := ret.DialogIconsChunk.GetFrame(mkf.INT(i))
+		if err != nil {
+			panic(err.Error())
+		}
+
+		bmp := mkf.NewRLEBitMap(buf)
+		ui.DialogIconImgs = append(ui.DialogIconImgs, bmp)
+
 	}
 
 	return ret
